@@ -1,5 +1,6 @@
-package com.joajy.spendingguard.spendevent;
+package com.joajy.spendingguard.spendevent.api;
 
+import com.joajy.spendingguard.spendevent.application.DuplicateSpendEventException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;

@@ -1,7 +1,11 @@
-package com.joajy.spendingguard.spendevent;
+package com.joajy.spendingguard.spendevent.application;
 
 import java.time.Instant;
 
+import com.joajy.spendingguard.outbox.OutboxEvent;
+import com.joajy.spendingguard.outbox.OutboxEventRepository;
+import com.joajy.spendingguard.spendevent.domain.SpendEventSource;
+import com.joajy.spendingguard.spendevent.persistence.RawSpendEventRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,14 +47,14 @@ class SpendEventTransactionIntegrationTest {
     void rollsBackRawEventWhenOutboxStorageFails() {
         given(outboxEventRepository.save(any(OutboxEvent.class)))
                 .willThrow(new IllegalStateException("outbox unavailable"));
-        SubmitSpendEventRequest request = new SubmitSpendEventRequest(
+        SubmitSpendEventCommand command = new SubmitSpendEventCommand(
                 SpendEventSource.SIMULATOR,
                 "rollback-check-100",
                 "테스트상점 12,800원 결제",
                 Instant.parse("2026-08-13T01:00:00Z")
         );
 
-        assertThatThrownBy(() -> spendEventService.submit(request))
+        assertThatThrownBy(() -> spendEventService.submit(command))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("outbox unavailable");
         assertThat(rawSpendEventRepository.count()).isZero();

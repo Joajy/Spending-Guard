@@ -1,4 +1,4 @@
-package com.joajy.spendingguard.spendevent;
+package com.joajy.spendingguard.outbox;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -15,7 +15,7 @@ import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "outbox_event")
-class OutboxEvent {
+public class OutboxEvent {
 
     @Id
     private UUID id;
@@ -49,7 +49,7 @@ class OutboxEvent {
     protected OutboxEvent() {
     }
 
-    OutboxEvent(UUID id, UUID aggregateId, String payload, Instant createdAt) {
+    public OutboxEvent(UUID id, UUID aggregateId, String payload, Instant createdAt) {
         this.id = id;
         this.aggregateType = "RawSpendEvent";
         this.aggregateId = aggregateId;
@@ -60,23 +60,23 @@ class OutboxEvent {
         this.createdAt = createdAt;
     }
 
-    UUID getId() {
+    public UUID getId() {
         return id;
     }
 
-    UUID getAggregateId() {
+    public UUID getAggregateId() {
         return aggregateId;
     }
 
-    String getEventType() {
+    public String getEventType() {
         return eventType;
     }
 
-    String getPayload() {
+    public String getPayload() {
         return payload;
     }
 
-    OutboxStatus getStatus() {
+    public OutboxStatus getStatus() {
         return status;
     }
 }

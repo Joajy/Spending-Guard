@@ -1,4 +1,4 @@
-package com.joajy.spendingguard.spendevent;
+package com.joajy.spendingguard.spendevent.application;
 
 import java.time.Instant;
 import java.util.List;
@@ -8,6 +8,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import com.joajy.spendingguard.outbox.OutboxEvent;
+import com.joajy.spendingguard.outbox.OutboxEventRepository;
+import com.joajy.spendingguard.outbox.OutboxStatus;
+import com.joajy.spendingguard.spendevent.domain.SpendEventSource;
+import com.joajy.spendingguard.spendevent.persistence.RawSpendEvent;
+import com.joajy.spendingguard.spendevent.persistence.RawSpendEventRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,36 +51,36 @@ class SpendEventPersistenceIntegrationTest {
 
     @Test
     void storesSanitizedEventAndOutboxTogether() {
-        SpendEventAcceptedResponse response = spendEventService.submit(new SubmitSpendEventRequest(
+        SpendEventReceipt receipt = spendEventService.submit(new SubmitSpendEventCommand(
                 SpendEventSource.MANUAL_TEXT,
                 null,
                 "test@example.com 테스트카드 1234-5678-9012-3456 12,800원 결제",
                 Instant.parse("2026-08-13T01:00:00Z")
         ));
 
-        RawSpendEvent storedEvent = rawSpendEventRepository.findById(response.eventId()).orElseThrow();
+        RawSpendEvent storedEvent = rawSpendEventRepository.findById(receipt.eventId()).orElseThrow();
         OutboxEvent storedOutbox = outboxEventRepository.findAll().getFirst();
 
         assertThat(storedEvent.getSanitizedMessage())
                 .contains("[EMAIL]", "[REDACTED]", "12,800원")
                 .doesNotContain("test@example.com", "1234-5678-9012-3456");
-        assertThat(storedOutbox.getAggregateId()).isEqualTo(response.eventId());
+        assertThat(storedOutbox.getAggregateId()).isEqualTo(receipt.eventId());
         assertThat(storedOutbox.getEventType()).isEqualTo("SpendEventReceived");
         assertThat(storedOutbox.getStatus()).isEqualTo(OutboxStatus.PENDING);
         assertThat(storedOutbox.getPayload())
-                .contains(response.eventId().toString(), "schemaVersion")
+                .contains(receipt.eventId().toString(), "schemaVersion")
                 .doesNotContain("1234-5678-9012-3456");
     }
 
     @Test
     void rejectsRepeatedExternalEventIdWithoutAddingRows() {
-        SubmitSpendEventRequest first = new SubmitSpendEventRequest(
+        SubmitSpendEventCommand first = new SubmitSpendEventCommand(
                 SpendEventSource.SIMULATOR,
                 "simulator-event-100",
                 "테스트상점 12,800원 결제",
                 Instant.parse("2026-08-13T01:00:00Z")
         );
-        SubmitSpendEventRequest repeated = new SubmitSpendEventRequest(
+        SubmitSpendEventCommand repeated = new SubmitSpendEventCommand(
                 SpendEventSource.SIMULATOR,
                 "simulator-event-100",
                 "메시지가 달라도 외부 이벤트 ID는 동일",
@@ -93,13 +99,13 @@ class SpendEventPersistenceIntegrationTest {
     void allowsSameMessageWhenOccurredAtIsDifferent() {
         String message = "테스트택시 18,000원 결제";
 
-        spendEventService.submit(new SubmitSpendEventRequest(
+        spendEventService.submit(new SubmitSpendEventCommand(
                 SpendEventSource.MANUAL_TEXT,
                 null,
                 message,
                 Instant.parse("2026-08-13T01:00:00Z")
         ));
-        spendEventService.submit(new SubmitSpendEventRequest(
+        spendEventService.submit(new SubmitSpendEventCommand(
                 SpendEventSource.MANUAL_TEXT,
                 null,
                 message,
@@ -115,7 +121,7 @@ class SpendEventPersistenceIntegrationTest {
         int attempts = 8;
         CountDownLatch start = new CountDownLatch(1);
         ExecutorService executor = Executors.newFixedThreadPool(attempts);
-        SubmitSpendEventRequest request = new SubmitSpendEventRequest(
+        SubmitSpendEventCommand command = new SubmitSpendEventCommand(
                 SpendEventSource.SIMULATOR,
                 "concurrent-event-100",
                 "테스트쇼핑 31,000원 결제",
@@ -124,7 +130,7 @@ class SpendEventPersistenceIntegrationTest {
 
         try {
             List<Future<Result>> results = java.util.stream.IntStream.range(0, attempts)
-                    .mapToObj(ignored -> executor.submit((Callable<Result>) () -> submitAfter(start, request)))
+                    .mapToObj(ignored -> executor.submit((Callable<Result>) () -> submitAfter(start, command)))
                     .toList();
             start.countDown();
 
@@ -146,10 +152,10 @@ class SpendEventPersistenceIntegrationTest {
         }
     }
 
-    private Result submitAfter(CountDownLatch start, SubmitSpendEventRequest request) throws InterruptedException {
+    private Result submitAfter(CountDownLatch start, SubmitSpendEventCommand command) throws InterruptedException {
         start.await();
         try {
-            spendEventService.submit(request);
+            spendEventService.submit(command);
             return Result.ACCEPTED;
         } catch (DuplicateSpendEventException exception) {
             return Result.DUPLICATE;

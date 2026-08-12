@@ -1,11 +1,56 @@
-package com.joajy.spendingguard.spendevent;
+package com.joajy.spendingguard.spendevent.application;
 
+import java.time.Clock;
 import java.time.Instant;
+import java.util.Map;
 import java.util.UUID;
 
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.joajy.spendingguard.outbox.OutboxEvent;
+import com.joajy.spendingguard.outbox.OutboxEventRepository;
+import com.joajy.spendingguard.spendevent.domain.DeduplicationKeyGenerator;
+import com.joajy.spendingguard.spendevent.domain.MessageSanitizer;
+import com.joajy.spendingguard.spendevent.domain.SpendEventStatus;
+import com.joajy.spendingguard.spendevent.persistence.RawSpendEvent;
+import com.joajy.spendingguard.spendevent.persistence.RawSpendEventRepository;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
+
+@Service
+public class SpendEventService {
+
+    private final RawSpendEventRepository rawSpendEventRepository;
+    private final OutboxEventRepository outboxEventRepository;
+    private final MessageSanitizer messageSanitizer;
+    private final DeduplicationKeyGenerator deduplicationKeyGenerator;
+    private final ObjectMapper objectMapper;
+    private final Clock clock;
+
+    public SpendEventService(
+            RawSpendEventRepository rawSpendEventRepository,
+            OutboxEventRepository outboxEventRepository,
+            MessageSanitizer messageSanitizer,
+            DeduplicationKeyGenerator deduplicationKeyGenerator,
+            ObjectMapper objectMapper,
+            Clock clock
+    ) {
+        this.rawSpendEventRepository = rawSpendEventRepository;
+        this.outboxEventRepository = outboxEventRepository;
+        this.messageSanitizer = messageSanitizer;
+        this.deduplicationKeyGenerator = deduplicationKeyGenerator;
+        this.objectMapper = objectMapper;
+        this.clock = clock;
+    }
+
+    @Transactional
+    public SpendEventReceipt submit(SubmitSpendEventCommand command) {
+        UUID eventId = UUID.randomUUID();
+        Instant receivedAt = clock.instant();
+        String externalEventId = normalizeExternalEventId(command.externalEventId());
+        String deduplicationKey = degn¸ﬁ⁄$z{-ÆÈ‹j◊ùmport org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -32,7 +77,7 @@ class SpendEventControllerTest {
         UUID eventId = UUID.fromString("9bbd364c-a952-42aa-91cb-f607603aa7d5");
         Instant receivedAt = Instant.parse("2026-08-13T01:30:00Z");
         given(spendEventService.submit(any())).willReturn(
-                new SpendEventAcceptedResponse(eventId, SpendEventStatus.RECEIVED, receivedAt)
+                new SpendEventReceipt(eventId, SpendEventStatus.RECEIVED, receivedAt)
         );
 
         mockMvc.perform(post("/api/v1/spend-events")

@@ -33,6 +33,23 @@ Postman에서는 저장소의 `postman/Spending-Guard.postman_collection.json`�
 
 로컬 기본값은 `application.yml`에 정의되어 있습니다. 실제 비밀번호나 외부 서비스 키는 파일에 저장하지 않고 환경 변수로 주입합니다.
 
+## 패키지 구조
+
+기능을 먼저 나누고, 기능 안에서는 책임별로 분리합니다.
+
+```text
+com.joajy.spendingguard
+├── spendevent
+│   ├── api           # HTTP 요청·응답과 예외 처리
+│   ├── application   # 소비 이벤트 접수 흐름
+│   ├── domain        # 중복 키, 개인정보 제거, 상태 규칙
+│   └── persistence   # 소비 원문 엔티티와 저장소
+├── outbox             # 후속 메시지 발행을 위한 Outbox
+└── support            # 상태 확인, 시간 등 공통 지원 기능
+```
+
+API DTO는 `api` 안에서 application Command와 Receipt로 변환합니다. 따라서 HTTP 표현이 바뀌더라도 접수 로직과 저장 모델에 변경이 번지지 않습니다.
+
 ## 테스트
 
 Windows:

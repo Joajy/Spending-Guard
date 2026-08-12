@@ -1,4 +1,4 @@
-package com.joajy.spendingguard.spendevent;
+package com.joajy.spendingguard.spendevent.application;
 
 public class DuplicateSpendEventException extends RuntimeException {
 

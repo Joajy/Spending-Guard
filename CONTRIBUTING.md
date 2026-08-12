@@ -2,24 +2,23 @@
 
 ## 작업 흐름
 
-1. 작업 목표와 완료 조건을 정한다.
-2. 작업 성격에 맞는 브랜치를 만든다.
-3. 기능 코드와 관련 테스트 코드를 함께 작성한다.
-4. 자동 테스트를 실행하고 역할 기반 브랜치에 커밋한다.
-5. Draft PR에서 변경 내용과 실제 테스트 결과를 확인한다.
-6. 사용자 승인 후에만 `main`에 병합한다.
+1. 하나의 브랜치에는 하나의 기능이나 역할만 담습니다.
+2. 구현과 관련 테스트를 함께 작성합니다.
+3. GitHub Actions 결과를 확인한 뒤 Draft Pull Request로 검토를 요청합니다.
+4. 승인 전에는 `main`에 병합하지 않습니다.
 
 ## 브랜치 규칙
 
-브랜치명은 날짜가 아니라 기능 또는 역할을 나타낸다.
+날짜나 작업 순번 대신 변경 목적이 드러나는 이름을 사용합니다.
 
 ```text
 chore/backend-bootstrap
 feat/transaction-ingestion
-feat/budget-ledger
-feat/risk-detection
+feat/outbox-publisher
 fix/duplicate-event-handling
 ```
+
+Draft를 포함해 Pull Request가 열려 있는 동안에는 검토와 CI 보완을 위해 브랜치를 유지합니다. 병합이 끝나면 원격 기능 브랜치를 삭제하고, 로컬 브랜치는 최신 `main`을 받은 뒤 삭제합니다. 병합하지 않고 닫은 브랜치는 후속 작업에 재사용할 이유가 없는지 확인한 뒤 정리합니다.
 
 ## 커밋 규칙
 
@@ -44,6 +43,7 @@ Conventional Commits 형식을 사용합니다.
 예시:
 
 ```text
+docs(architecture): define spend event processing boundaries
 feat(ingestion): persist raw event with transactional outbox
 test(ledger): verify idempotent reversal processing
 perf(batch): record one-million-row benchmark
@@ -52,7 +52,7 @@ perf(batch): record one-million-row benchmark
 ## 완료 조건
 
 - 요구사항 또는 Issue와 연결되어 있다.
-- 기능과 관련된 단위 테스트 또는 통합 테스트가 있다.
+- 관련 자동 테스트가 있다.
 - 전체 테스트가 통과한다.
 - 공개 API 변경은 OpenAPI 문서에 반영한다.
 - 설계 판단이 바뀌면 ADR을 갱신한다.

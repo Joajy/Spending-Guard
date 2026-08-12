@@ -1,4 +1,4 @@
-package com.joajy.spendingguard.spendevent;
+package com.joajy.spendingguard.spendevent.domain;
 
 import java.time.Instant;
 
