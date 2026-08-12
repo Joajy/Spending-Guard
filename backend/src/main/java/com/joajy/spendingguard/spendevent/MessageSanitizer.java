@@ -7,7 +7,9 @@ import org.springframework.stereotype.Component;
 @Component
 class MessageSanitizer {
 
-    private static final Pattern LONG_NUMBER = Pattern.compile("(?<!\\d)(?:\\d[ -]?){9,18}\\d(?!\\d)");
+    private static final Pattern LONG_NUMBER = Pattern.compile(
+            "(?<!\\d)(?:\\d{4}(?:[- ]\\d{4}){3}|\\d{2,6}(?:-\\d{2,6}){2,5}|\\d{10,19})(?!\\d)"
+    );
     private static final Pattern EMAIL = Pattern.compile("[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}");
     private static final Pattern WHITESPACE = Pattern.compile("\\s+");
 

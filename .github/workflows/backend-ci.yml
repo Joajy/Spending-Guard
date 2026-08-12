@@ -44,6 +44,7 @@ jobs:
         run: ./gradlew clean test jacocoTestReport --no-daemon
 
       - name: Summarize verification metrics
+        if: always()
         run: |
           python - <<'PY'
           import glob
@@ -60,14 +61,17 @@ jobs:
           passed = executed - totals["failures"] - totals["errors"]
           pass_rate = (passed / executed * 100) if executed else 0.0
 
-          coverage = ET.parse("build/reports/jacoco/test/jacocoTestReport.xml").getroot()
-          counters = {
-              counter.attrib["type"]: (
-                  int(counter.attrib["covered"]),
-                  int(counter.attrib["missed"]),
-              )
-              for counter in coverage.findall("counter")
-          }
+          coverage_path = "build/reports/jacoco/test/jacocoTestReport.xml"
+          counters = {}
+          if os.path.exists(coverage_path):
+              coverage = ET.parse(coverage_path).getroot()
+              counters = {
+                  counter.attrib["type"]: (
+                      int(counter.attrib["covered"]),
+                      int(counter.attrib["missed"]),
+                  )
+                  for counter in coverage.findall("counter")
+              }
 
           def percentage(counter_type):
               covered, missed = counters.get(counter_type, (0, 0))
