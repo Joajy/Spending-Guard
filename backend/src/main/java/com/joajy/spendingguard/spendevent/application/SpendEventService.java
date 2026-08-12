@@ -50,83 +50,54 @@ public class SpendEventService {
         UUID eventId = UUID.randomUUID();
         Instant receivedAt = clock.instant();
         String externalEventId = normalizeExternalEventId(command.externalEventId());
-        String deduplicationKey = degn���$z{-���jםmport org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.http.MediaType;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
-@WebMvcTest(SpendEventController.class)
-class SpendEventControllerTest {
-
-    @Autowired
-    private MockMvc mockMvc;
-
-    @MockitoBean
-    private SpendEventService spendEventService;
-
-    @Test
-    void acceptsValidSpendEvent() throws Exception {
-        UUID eventId = UUID.fromString("9bbd364c-a952-42aa-91cb-f607603aa7d5");
-        Instant receivedAt = Instant.parse("2026-08-13T01:30:00Z");
-        given(spendEventService.submit(any())).willReturn(
-                new SpendEventReceipt(eventId, SpendEventStatus.RECEIVED, receivedAt)
+        String deduplicationKey = deduplicationKeyGenerator.generate(
+                command.source(),
+                externalEventId,
+                command.message(),
+                command.occurredAt()
         );
 
-        mockMvc.perform(post("/api/v1/spend-events")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "source": "MANUAL_TEXT",
-                                  "message": "테스트상점 12,800원 결제",
-                                  "occurredAt": "2026-08-13T01:00:00Z"
-                                }
-                                """))
-                .andExpect(status().isAccepted())
-                .andExpect(header().string("Location", "http://localhost/api/v1/spend-events/" + eventId))
-                .andExpect(jsonPath("$.eventId").value(eventId.toString()))
-                .andExpect(jsonPath("$.status").value("RECEIVED"))
-                .andExpect(jsonPath("$.receivedAt").value("2026-08-13T01:30:00Z"));
+        RawSpendEvent spendEvent = new RawSpendEvent(
+                eventId,
+                command.source(),
+                externalEventId,
+                deduplicationKey,
+                messageSanitizer.sanitize(command.message()),
+                SpendEventStatus.RECEIVED,
+                command.occurredAt(),
+                receivedAt
+        );
+
+        try {
+            rawSpendEventRepository.saveAndFlush(spendEvent);
+        } catch (DataIntegrityViolationException exception) {
+            throw new DuplicateSpendEventException();
+        }
+
+        outboxEventRepository.save(new OutboxEvent(
+                UUID.randomUUID(),
+                eventId,
+                createOutboxPayload(spendEvent),
+                receivedAt
+        ));
+
+        return new SpendEventReceipt(eventId, SpendEventStatus.RECEIVED, receivedAt);
     }
 
-    @Test
-    void rejectsBlankMessage() throws Exception {
-        mockMvc.perform(post("/api/v1/spend-events")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "source": "MANUAL_TEXT",
-                                  "message": " "
-                                }
-                                """))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.title").value("Invalid request"))
-                .andExpect(jsonPath("$.detail").value(org.hamcrest.Matchers.startsWith("message:")));
-
-        verifyNoInteractions(spendEventService);
+    private String normalizeExternalEventId(String externalEventId) {
+        return StringUtils.hasText(externalEventId) ? externalEventId.trim() : null;
     }
 
-    @Test
-    void returnsConflictForDuplicateEvent() throws Exception {
-        given(spendEventService.submit(any())).willThrow(new DuplicateSpendEventException());
-
-        mockMvc.perform(post("/api/v1/spend-events")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "source": "SIMULATOR",
-                                  "externalEventId": "event-100",
-                                  "message": "테스트상점 12,800원 결제"
-                                }
-                                """))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.title").value("Duplicate spend event"));
+    private String createOutboxPayload(RawSpendEvent event) {
+        try {
+            return objectMapper.writeValueAsString(Map.of(
+                    "schemaVersion", 1,
+                    "eventId", event.getId(),
+                    "source", event.getSource(),
+                    "receivedAt", event.getReceivedAt()
+            ));
+        } catch (JsonProcessingException exception) {
+            throw new IllegalStateException("소비 이벤트 발행 데이터를 생성할 수 없습니다.", exception);
+        }
     }
 }
