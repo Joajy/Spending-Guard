@@ -1,0 +1,19 @@
+package com.joajy.spendingguard.spendevent;
+
+import java.util.regex.Pattern;
+
+import org.springframework.stereotype.Component;
+
+@Component
+class MessageSanitizer {
+
+    private static final Pattern LONG_NUMBER = Pattern.compile("(?<!\\d)(?:\\d[ -]?){9,18}\\d(?!\\d)");
+    private static final Pattern EMAIL = Pattern.compile("[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}");
+    private static final Pattern WHITESPACE = Pattern.compile("\\s+");
+
+    String sanitize(String message) {
+        String normalized = WHITESPACE.matcher(message.trim()).replaceAll(" ");
+        String withoutEmail = EMAIL.matcher(normalized).replaceAll("[EMAIL]");
+        return LONG_NUMBER.matcher(withoutEmail).replaceAll("[REDACTED]");
+    }
+}

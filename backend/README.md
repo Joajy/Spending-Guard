@@ -16,6 +16,21 @@
 4. `SpendingGuardApplication`을 실행합니다.
 5. `GET http://localhost:8080/api/v1/status`가 정상 응답하는지 확인합니다.
 
+소비 알림은 다음 API로 접수할 수 있습니다.
+
+```http
+POST http://localhost:8080/api/v1/spend-events
+Content-Type: application/json
+
+{
+  "source": "MANUAL_TEXT",
+  "message": "테스트상점 12,800원 결제",
+  "occurredAt": "2026-08-13T01:00:00Z"
+}
+```
+
+Postman에서는 저장소의 `postman/Spending-Guard.postman_collection.json`을 불러오면 상태 확인, 정상 접수, 중복 접수를 순서대로 확인할 수 있습니다.
+
 로컬 기본값은 `application.yml`에 정의되어 있습니다. 실제 비밀번호나 외부 서비스 키는 파일에 저장하지 않고 환경 변수로 주입합니다.
 
 ## 테스트
