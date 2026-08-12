@@ -41,6 +41,53 @@ jobs:
       - name: Run backend tests
         run: ./gradlew clean test jacocoTestReport --no-daemon
 
+      - name: Summarize verification metrics
+        run: |
+          python - <<'PY'
+          import glob
+          import os
+          import xml.etree.ElementTree as ET
+
+          totals = {"tests": 0, "failures": 0, "errors": 0, "skipped": 0}
+          for report in glob.glob("build/test-results/test/TEST-*.xml"):
+              suite = ET.parse(report).getroot()
+              for key in totals:
+                  totals[key] += int(suite.attrib.get(key, 0))
+
+          executed = totals["tests"] - totals["skipped"]
+          passed = executed - totals["failures"] - totals["errors"]
+          pass_rate = (passed / executed * 100) if executed else 0.0
+
+          coverage = ET.parse("build/reports/jacoco/test/jacocoTestReport.xml").getroot()
+          counters = {
+              counter.attrib["type"]: (
+                  int(counter.attrib["covered"]),
+                  int(counter.attrib["missed"]),
+              )
+              for counter in coverage.findall("counter")
+          }
+
+          def percentage(counter_type):
+              covered, missed = counters.get(counter_type, (0, 0))
+              total = covered + missed
+              return covered / total * 100 if total else 0.0
+
+          line_coverage = percentage("LINE")
+          branch_coverage = percentage("BRANCH")
+          summary = (
+              f"Tests: {passed}/{executed} passed ({pass_rate:.2f}%)\n"
+              f"Failures: {totals['failures']}, Errors: {totals['errors']}, "
+              f"Skipped: {totals['skipped']}\n"
+              f"Line coverage: {line_coverage:.2f}%\n"
+              f"Branch coverage: {branch_coverage:.2f}%"
+          )
+          print(summary)
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as output:
+              output.write("## Backend verification\n\n")
+              output.write(summary.replace("\n", "  \n"))
+              output.write("\n")
+          PY
+
       - name: Upload test and coverage reports
         if: always()
         uses: actions/upload-artifact@v7
