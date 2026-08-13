@@ -40,15 +40,29 @@ Postman에서는 저장소의 `postman/Spending-Guard.postman_collection.json`�
 ```text
 com.joajy.spendingguard
 ├── spendevent
-│   ├── api           # HTTP 요청·응답과 예외 처리
-│   ├── application   # 소비 이벤트 접수 흐름
-│   ├── domain        # 중복 키, 개인정보 제거, 상태 규칙
-│   └── persistence   # 소비 원문 엔티티와 저장소
-├── outbox             # 후속 메시지 발행을 위한 Outbox
-└── support            # 상태 확인, 시간 등 공통 지원 기능
+│   ├── api
+│   │   ├── controller
+│   │   ├── dto
+│   │   └── exception
+│   ├── application
+│   │   ├── command
+│   │   ├── port
+│   │   ├── result
+│   │   └── service
+│   ├── domain
+│   │   ├── event
+│   │   ├── model
+│   │   └── policy
+│   └── infrastructure
+│       ├── config
+│       └── persistence
+├── outbox
+│   └── infrastructure
+│       └── persistence
+└── support
 ```
 
-API DTO는 `api` 안에서 application Command와 Receipt로 변환합니다. 따라서 HTTP 표현이 바뀌더라도 접수 로직과 저장 모델에 변경이 번지지 않습니다.
+Controller는 입력 포트로 유스케이스를 호출하고, 애플리케이션은 출력 포트를 통해 PostgreSQL과 Outbox에 접근합니다. 도메인은 Spring과 JPA에 의존하지 않으며 이 규칙은 ArchUnit 테스트로 확인합니다.
 
 ## 테스트
 
