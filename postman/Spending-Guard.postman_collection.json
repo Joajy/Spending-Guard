@@ -1,0 +1,124 @@
+{
+  "info": {
+    "name": "Spending Guard",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    }
+  ],
+  "item": [
+    {
+      "name": "서비스 상태 확인",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/status"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));",
+              "pm.test('서비스가 UP 상태다', () => pm.expect(pm.response.json().status).to.eql('UP'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "소비 알림 접수",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"source\": \"SIMULATOR\",\n  \"externalEventId\": \"{{$guid}}\",\n  \"message\": \"테스트상점 12,800원 결제\",\n  \"occurredAt\": \"2026-08-13T01:00:00Z\"\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/spend-events"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('202 Accepted', () => pm.response.to.have.status(202));",
+              "pm.test('RECEIVED 상태로 접수된다', () => pm.expect(pm.response.json().status).to.eql('RECEIVED'));",
+              "pm.test('조회 경로가 Location에 포함된다', () => pm.expect(pm.response.headers.get('Location')).to.include('/api/v1/spend-events/'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "중복 확인 - 최초 접수",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "pm.collectionVariables.set('duplicateEventId', pm.variables.replaceIn('{{$guid}}'));"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('최초 요청은 202 Accepted', () => pm.response.to.have.status(202));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"source\": \"SIMULATOR\",\n  \"externalEventId\": \"{{duplicateEventId}}\",\n  \"message\": \"테스트택시 18,000원 결제\"\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/spend-events"
+      }
+    },
+    {
+      "name": "중복 확인 - 재접수",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"source\": \"SIMULATOR\",\n  \"externalEventId\": \"{{duplicateEventId}}\",\n  \"message\": \"테스트택시 18,000원 결제\"\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/spend-events"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('409 Conflict', () => pm.response.to.have.status(409));",
+              "pm.test('중복 접수 사유가 포함된다', () => pm.expect(pm.response.json().title).to.eql('Duplicate spend event'));"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

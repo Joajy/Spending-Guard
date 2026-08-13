@@ -4,12 +4,14 @@ on:
   pull_request:
     paths:
       - "backend/**"
+      - "postman/**"
       - ".github/workflows/backend-ci.yml"
   push:
     branches:
       - main
     paths:
       - "backend/**"
+      - "postman/**"
       - ".github/workflows/backend-ci.yml"
   workflow_dispatch:
 
@@ -42,6 +44,7 @@ jobs:
         run: ./gradlew clean test jacocoTestReport --no-daemon
 
       - name: Summarize verification metrics
+        if: always()
         run: |
           python - <<'PY'
           import glob
@@ -58,28 +61,29 @@ jobs:
           passed = executed - totals["failures"] - totals["errors"]
           pass_rate = (passed / executed * 100) if executed else 0.0
 
-          coverage = ET.parse("build/reports/jacoco/test/jacocoTestReport.xml").getroot()
-          counters = {
-              counter.attrib["type"]: (
-                  int(counter.attrib["covered"]),
-                  int(counter.attrib["missed"]),
-              )
-              for counter in coverage.findall("counter")
-          }
+          coverage_path = "build/reports/jacoco/test/jacocoTestReport.xml"
+          counters = {}
+          if os.path.exists(coverage_path):
+              coverage = ET.parse(coverage_path).getroot()
+              counters = {
+                  counter.attrib["type"]: (
+                      int(counter.attrib["covered"]),
+                      int(counter.attrib["missed"]),
+                  )
+                  for counter in coverage.findall("counter")
+              }
 
           def percentage(counter_type):
               covered, missed = counters.get(counter_type, (0, 0))
               total = covered + missed
               return covered / total * 100 if total else 0.0
 
-          line_coverage = percentage("LINE")
-          branch_coverage = percentage("BRANCH")
           summary = (
               f"Tests: {passed}/{executed} passed ({pass_rate:.2f}%)\n"
               f"Failures: {totals['failures']}, Errors: {totals['errors']}, "
               f"Skipped: {totals['skipped']}\n"
-              f"Line coverage: {line_coverage:.2f}%\n"
-              f"Branch coverage: {branch_coverage:.2f}%"
+              f"Line coverage: {percentage('LINE'):.2f}%\n"
+              f"Branch coverage: {percentage('BRANCH'):.2f}%"
           )
           print(summary)
           with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as output:
@@ -96,5 +100,100 @@ jobs:
           path: |
             backend/build/reports/tests/test
             backend/build/reports/jacoco/test
+          if-no-files-found: warn
+          retention-days: 14
+
+  postman:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: spending_guard
+          POSTGRES_USER: spending_guard
+          POSTGRES_PASSWORD: local_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U spending_guard -d spending_guard"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      DB_URL: jdbc:postgresql://localhost:5432/spending_guard
+      DB_USERNAME: spending_guard
+      DB_PASSWORD: local_password
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+          cache-dependency-path: backend/*.gradle
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+
+      - name: Start API
+        working-directory: backend
+        run: |
+          chmod +x gradlew
+          mkdir -p build/postman
+          ./gradlew bootRun --no-daemon > build/postman/application.log 2>&1 &
+          for attempt in {1..30}; do
+            if curl --fail --silent http://localhost:8080/api/v1/status > /dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          cat build/postman/application.log
+          exit 1
+
+      - name: Run Postman collection
+        run: >-
+          npx --yes newman@6 run postman/Spending-Guard.postman_collection.json
+          --reporters cli,json,junit
+          --reporter-json-export backend/build/postman/newman.json
+          --reporter-junit-export backend/build/postman/newman.xml
+
+      - name: Summarize Postman results
+        if: always()
+        run: |
+          if [ ! -f backend/build/postman/newman.json ]; then
+            exit 0
+          fi
+          node <<'JS'
+          const fs = require('fs');
+          const result = JSON.parse(fs.readFileSync('backend/build/postman/newman.json', 'utf8'));
+          const stats = result.run.stats;
+          const assertions = stats.assertions;
+          const requests = stats.requests;
+          const passed = assertions.total - assertions.failed;
+          const rate = assertions.total === 0 ? 0 : passed / assertions.total * 100;
+          const summary = [
+            '## Postman API verification',
+            '',
+            `Requests: ${requests.total - requests.failed}/${requests.total} succeeded`,
+            `Assertions: ${passed}/${assertions.total} passed (${rate.toFixed(2)}%)`,
+            `Failed assertions: ${assertions.failed}`,
+            `Average response time: ${result.run.timings.responseAverage.toFixed(2)} ms`,
+          ].join('  \n');
+          console.log(summary.replaceAll('  \n', '\n'));
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary + '\n');
+          JS
+
+      - name: Upload Postman reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: postman-test-reports
+          path: backend/build/postman
           if-no-files-found: warn
           retention-days: 14

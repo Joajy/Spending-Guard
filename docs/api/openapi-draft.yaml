@@ -2,37 +2,16 @@ openapi: 3.1.0
 info:
   title: SpendGuard API
   version: 0.1.0-draft
-  description: API contract updated as features are implemented and verified.
+  description: Day 1 API contract. Implementation starts after review.
 servers:
   - url: http://localhost:8080
 tags:
-  - name: System
   - name: Spend Events
   - name: Transactions
   - name: Budgets
   - name: Dashboard
   - name: Integrations
 paths:
-  /api/v1/status:
-    get:
-      tags: [System]
-      summary: Get API service status
-      operationId: getServiceStatus
-      responses:
-        '200':
-          description: API process is available
-          content:
-            application/json:
-              schema:
-                type: object
-                required: [service, status]
-                properties:
-                  service:
-                    type: string
-                    example: spending-guard-api
-                  status:
-                    type: string
-                    enum: [UP]
   /api/v1/spend-events:
     post:
       tags: [Spend Events]
@@ -55,6 +34,10 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '409':
           description: Duplicate event
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
   /api/v1/spend-events/{eventId}:
     get:
       tags: [Spend Events]
