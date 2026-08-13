@@ -28,4 +28,22 @@ class DeduplicationKeyGeneratorTest {
 
         assertThat(first).isEqualTo(second);
     }
+
+    @Test
+    void createsStableKeyWhenOccurredAtIsMissing() {
+        String first = generator.generate(
+                SpendEventSource.MANUAL_TEXT,
+                null,
+                "테스트택시  18,000원 결제",
+                null
+        );
+        String second = generator.generate(
+                SpendEventSource.MANUAL_TEXT,
+                null,
+                " 테스트택시 18,000원 결제 ",
+                null
+        );
+
+        assertThat(first).isEqualTo(second).hasSize(64);
+    }
 }
