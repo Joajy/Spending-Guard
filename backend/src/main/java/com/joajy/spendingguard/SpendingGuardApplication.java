@@ -10,6 +10,11 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication
 public class SpendingGuardApplication {
 
+    /**
+     * Spring 애플리케이션 컨텍스트를 생성하고 HTTP 서버를 시작한다.
+     *
+     * @param args Spring Boot에 전달할 명령행 인자
+     */
     public static void main(String[] args) {
         SpringApplication.run(SpendingGuardApplication.class, args);
     }

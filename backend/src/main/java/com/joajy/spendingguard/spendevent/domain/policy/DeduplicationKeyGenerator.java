@@ -10,11 +10,26 @@ import com.joajy.spendingguard.spendevent.domain.model.SpendEventSource;
 
 /**
  * 같은 소비 알림을 반복 접수하지 않도록 결정적인 SHA-256 중복 키를 생성한다.
- * 금융사가 제공한 외부 ID가 있으면 유입 경로와 ID를 우선 사용하고, 없으면 공백을 정규화한 메시지와 발생 시각으로 지문을 만든다.
- * 키 자체에는 원문을 남기지 않아 중복 검사 과정에서 불필요한 민감 정보 노출을 줄인다.
+ *
+ * <p><strong>키 우선순위:</strong> 외부 ID가 있으면 {@code source + externalEventId}를
+ * 사용한다. 없으면 {@code source + normalizedMessage + occurredAt}으로 대체 지문을 만든다.
+ * 채널이 다른 동일 문자열은 별개 이벤트로 취급한다.
+ *
+ * <p><strong>보안 경계:</strong> 반환값은 64자리 16진수 해시이므로 데이터베이스의 중복
+ * 인덱스에 원문을 남기지 않는다. 다만 SHA-256은 암호화가 아니므로 입력 후보가 제한된
+ * 환경에서 원문 비밀성을 보장하는 수단으로 사용해서는 안 된다.
  */
 public class DeduplicationKeyGenerator {
 
+    /**
+     * 입력 의미가 같으면 항상 같은 중복 키를 생성한다.
+     *
+     * @param source 이벤트 수집 채널
+     * @param externalEventId 채널이 제공한 식별자, 없으면 {@code null}
+     * @param message 정규화 전 소비 알림
+     * @param occurredAt 외부 채널 기준 발생 시각
+     * @return SHA-256 해시를 소문자 16진수로 표현한 64자리 키
+     */
     public String generate(
             SpendEventSource source,
             String externalEventId,

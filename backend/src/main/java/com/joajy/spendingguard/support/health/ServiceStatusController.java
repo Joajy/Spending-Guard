@@ -13,6 +13,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/status")
 public class ServiceStatusController {
 
+    /**
+     * 프로세스가 HTTP 요청을 처리할 수 있는지 확인한다.
+     *
+     * @return 서비스 이름과 {@code UP} 상태
+     */
     @GetMapping
     public ResponseEntity<ServiceStatusResponse> status() {
         return ResponseEntity.ok(new ServiceStatusResponse("spending-guard-api", "UP"));
@@ -20,6 +25,9 @@ public class ServiceStatusController {
 
     /**
      * 상태 확인 API가 반환하는 서비스 식별자와 현재 가동 상태를 표현한다.
+     *
+     * @param service 상태를 응답한 애플리케이션 이름
+     * @param status 프로세스의 현재 가동 상태
      */
     public record ServiceStatusResponse(String service, String status) {
     }

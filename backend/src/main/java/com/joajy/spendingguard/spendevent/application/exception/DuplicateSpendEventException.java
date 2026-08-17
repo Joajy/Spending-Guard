@@ -6,6 +6,7 @@ package com.joajy.spendingguard.spendevent.application.exception;
  */
 public class DuplicateSpendEventException extends RuntimeException {
 
+    /** 사용자에게 노출할 수 있는 중복 접수 메시지로 예외를 생성한다. */
     public DuplicateSpendEventException() {
         super("이미 접수된 소비 알림입니다.");
     }

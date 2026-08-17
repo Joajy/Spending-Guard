@@ -48,6 +48,7 @@ public class RawSpendEventEntity {
     @Column(name = "received_at", nullable = false)
     private Instant receivedAt;
 
+    /** JPA 프록시와 리플렉션 기반 생성을 위한 생성자. */
     protected RawSpendEventEntity() {
     }
 
