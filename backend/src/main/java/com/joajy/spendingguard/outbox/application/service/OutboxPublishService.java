@@ -12,6 +12,11 @@ import com.joajy.spendingguard.outbox.application.port.outbound.UpdateOutboxEven
 import com.joajy.spendingguard.outbox.application.result.OutboxPublishBatchResult;
 import org.springframework.stereotype.Service;
 
+/**
+ * 대기 중인 Outbox 이벤트를 선점하고 외부 브로커에 발행한 뒤 결과 상태를 기록하는 유스케이스다.
+ * 개별 이벤트의 발행 실패는 다음 재시도 시각을 계산해 격리하며, 한 건의 실패가 같은 배치의 나머지 발행을 막지 않게 한다.
+ * 실제 선점, 전송, 상태 저장은 출력 포트에 위임해 처리 흐름과 인프라 구현을 분리한다.
+ */
 @Service
 public class OutboxPublishService {
 
@@ -72,4 +77,3 @@ public class OutboxPublishService {
         return new OutboxPublishBatchResult(events.size(), published, failed);
     }
 }
-

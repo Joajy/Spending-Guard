@@ -17,6 +17,11 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * PostgreSQL에서 발행 대상을 선점하고 Outbox 상태를 변경하는 영속성 어댑터다.
+ * {@code FOR UPDATE SKIP LOCKED}와 짧은 새 트랜잭션을 사용해 여러 인스턴스가 서로 기다리지 않고 다른 이벤트를 가져가게 한다.
+ * 임대가 끝난 작업은 다시 선점할 수 있으며, 상태 변경 시 claim token을 검사해 늦게 끝난 작업의 덮어쓰기를 막는다.
+ */
 @Component
 class OutboxDispatchPersistenceAdapter implements ClaimOutboxEventsPort, UpdateOutboxEventStatePort {
 
@@ -143,4 +148,3 @@ class OutboxDispatchPersistenceAdapter implements ClaimOutboxEventsPort, UpdateO
     }
 
 }
-

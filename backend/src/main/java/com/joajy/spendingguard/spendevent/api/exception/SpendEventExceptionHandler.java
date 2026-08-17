@@ -11,6 +11,10 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+/**
+ * 소비 이벤트 API에서 발생하는 입력 오류와 중복 접수를 일관된 Problem Details 응답으로 변환한다.
+ * 해당 컨트롤러에만 적용 범위를 제한해 다른 API가 각자의 오류 계약을 독립적으로 설계할 수 있게 한다.
+ */
 @RestControllerAdvice(assignableTypes = SpendEventController.class)
 class SpendEventExceptionHandler {
 

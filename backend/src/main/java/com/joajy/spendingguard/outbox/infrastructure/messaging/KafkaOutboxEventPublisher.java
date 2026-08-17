@@ -11,6 +11,11 @@ import com.joajy.spendingguard.outbox.infrastructure.config.OutboxPublisherPrope
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 
+/**
+ * Outbox 이벤트를 Kafka로 전달하는 메시징 출력 어댑터다.
+ * 같은 소비 이벤트의 순서를 유지할 수 있도록 aggregate ID를 메시지 키로 사용하고, 제한 시간 안에 브로커 확인을 받아야 성공으로 반환한다.
+ * 중단, 시간 초과, 전송 실패를 구분된 오류 코드로 변환해 애플리케이션의 재시도 판단에 전달한다.
+ */
 @Component
 class KafkaOutboxEventPublisher implements PublishOutboxEventPort {
 
@@ -43,4 +48,3 @@ class KafkaOutboxEventPublisher implements PublishOutboxEventPort {
         }
     }
 }
-

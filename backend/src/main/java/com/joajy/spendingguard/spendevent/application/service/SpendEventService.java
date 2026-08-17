@@ -18,6 +18,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+/**
+ * 소비 알림을 안전한 원천 이벤트로 접수하고 후속 처리를 위한 도메인 이벤트를 기록하는 유스케이스다.
+ * 외부 식별자를 정규화하고 중복 키와 정제 메시지를 만든 뒤, 원천 이벤트와 Outbox 이벤트를 하나의 트랜잭션으로 저장한다.
+ * 이 원자적 저장으로 데이터는 남았지만 분석 이벤트가 유실되는 상태를 방지한다.
+ */
 @Service
 public class SpendEventService implements SubmitSpendEventUseCase {
 

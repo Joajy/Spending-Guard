@@ -2,6 +2,10 @@ package com.joajy.spendingguard.outbox.domain.policy;
 
 import java.time.Duration;
 
+/**
+ * 연속 실패 횟수에 따라 재시도 대기 시간을 두 배씩 늘리는 도메인 정책이다.
+ * 최대 대기 시간을 상한으로 두고 시간 계산의 오버플로도 상한값으로 처리해 비정상적인 재시도 시각을 방지한다.
+ */
 public class ExponentialRetryBackoff {
 
     private final Duration baseDelay;
@@ -38,4 +42,3 @@ public class ExponentialRetryBackoff {
         return delay;
     }
 }
-

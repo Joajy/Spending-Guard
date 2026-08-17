@@ -8,6 +8,10 @@ import com.joajy.spendingguard.spendevent.application.port.outbound.AppendSpendE
 import com.joajy.spendingguard.spendevent.domain.event.SpendEventReceived;
 import org.springframework.stereotype.Component;
 
+/**
+ * 접수된 소비 이벤트를 JSON 페이로드로 직렬화해 Outbox 테이블에 적재하는 출력 어댑터다.
+ * 소비 원문 대신 후속 처리에 필요한 최소 식별 정보만 저장하며, 소비 이벤트 저장 트랜잭션에 참여해 두 기록의 원자성을 보장한다.
+ */
 @Component
 class OutboxPersistenceAdapter implements AppendSpendEventOutboxPort {
 

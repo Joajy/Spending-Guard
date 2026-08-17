@@ -14,6 +14,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.util.UriComponentsBuilder;
 
+/**
+ * 소비 알림 텍스트를 접수하는 HTTP 입력 어댑터다.
+ * 요청 DTO를 입력 포트로 전달하고 비동기 처리 접수 결과를 {@code 202 Accepted}와 리소스 위치로 변환한다.
+ * 저장소나 메시지 브로커를 직접 호출하지 않아 전송 계층과 유스케이스의 경계를 유지한다.
+ */
 @RestController
 @RequestMapping("/api/v1/spend-events")
 public class SpendEventController {
