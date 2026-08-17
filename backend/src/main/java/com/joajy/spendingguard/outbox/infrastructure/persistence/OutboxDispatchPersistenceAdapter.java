@@ -3,6 +3,8 @@ package com.joajy.spendingguard.outbox.infrastructure.persistence;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
 
@@ -18,27 +20,29 @@ import org.springframework.transaction.annotation.Transactional;
 @Component
 class OutboxDispatchPersistenceAdapter implements ClaimOutboxEventsPort, UpdateOutboxEventStatePort {
 
-    private static final String SELECT_CLAIM_CANDIDATES_SQL = """
-            SELECT id,
-                   aggregate_id,
-                   event_type,
-                   CAST(payload AS text) AS payload,
-                   attempt_count
-            FROM outbox_event
-            WHERE (status = 'PENDING' AND next_attempt_at <= :claimedAt)
-               OR (status = 'PROCESSING' AND claimed_until <= :claimedAt)
-            ORDER BY created_at
-            LIMIT :batchSize
-            FOR UPDATE SKIP LOCKED
-            """;
-
-    private static final String CLAIM_CANDIDATES_SQL = """
-            UPDATE outbox_event
+    private static final String CLAIM_SQL = """
+            WITH candidates AS (
+                SELECT id
+                FROM outbox_event
+                WHERE (status = 'PENDING' AND next_attempt_at <= :claimedAt)
+                   OR (status = 'PROCESSING' AND claimed_until <= :claimedAt)
+                ORDER BY created_at
+                LIMIT :batchSize
+                FOR UPDATE SKIP LOCKED
+            )
+            UPDATE outbox_event AS event
             SET status = 'PROCESSING',
                 claim_token = :claimToken,
                 claimed_until = :claimedUntil,
                 last_error_code = NULL
-            WHERE id IN (:eventIds)
+            FROM candidates
+            WHERE event.id = candidates.id
+            RETURNING event.id,
+                      event.aggregate_id,
+                      event.event_type,
+                      CAST(event.payload AS text) AS payload,
+                      event.attempt_count,
+                      event.claim_token
             """;
 
     private static final String MARK_PUBLISHED_SQL = """
@@ -79,28 +83,14 @@ class OutboxDispatchPersistenceAdapter implements ClaimOutboxEventsPort, UpdateO
             Instant claimedAt,
             Instant claimedUntil
     ) {
-        List<OutboxClaimCandidate> candidates = jdbcClient.sql(SELECT_CLAIM_CANDIDATES_SQL)
-                .param("batchSize", batchSize)
-                .param("claimedAt", claimedAt)
-                .query(this::mapClaimCandidate)
-                .list();
-        if (candidates.isEmpty()) {
-            return List.of();
-        }
-
         UUID claimToken = UUID.randomUUID();
-        int updated = jdbcClient.sql(CLAIM_CANDIDATES_SQL)
-                .param("eventIds", candidates.stream().map(OutboxClaimCandidate::id).toList())
-                .param("claimedUntil", claimedUntil)
+        return jdbcClient.sql(CLAIM_SQL)
+                .param("batchSize", batchSize)
+                .param("claimedAt", toDatabaseTimestamp(claimedAt))
+                .param("claimedUntil", toDatabaseTimestamp(claimedUntil))
                 .param("claimToken", claimToken)
-                .update();
-        if (updated != candidates.size()) {
-            throw new IllegalStateException("Outbox claim update count does not match selected candidates");
-        }
-
-        return candidates.stream()
-                .map(candidate -> candidate.claimedWith(claimToken))
-                .toList();
+                .query(this::mapClaimedEvent)
+                .list();
     }
 
     @Override
@@ -109,7 +99,7 @@ class OutboxDispatchPersistenceAdapter implements ClaimOutboxEventsPort, UpdateO
         int updated = jdbcClient.sql(MARK_PUBLISHED_SQL)
                 .param("eventId", eventId)
                 .param("claimToken", claimToken)
-                .param("publishedAt", publishedAt)
+                .param("publishedAt", toDatabaseTimestamp(publishedAt))
                 .update();
         requireClaim(updated, eventId);
     }
@@ -125,20 +115,25 @@ class OutboxDispatchPersistenceAdapter implements ClaimOutboxEventsPort, UpdateO
         int updated = jdbcClient.sql(MARK_FAILED_SQL)
                 .param("eventId", eventId)
                 .param("claimToken", claimToken)
-                .param("nextAttemptAt", nextAttemptAt)
+                .param("nextAttemptAt", toDatabaseTimestamp(nextAttemptAt))
                 .param("errorCode", errorCode)
                 .update();
         requireClaim(updated, eventId);
     }
 
-    private OutboxClaimCandidate mapClaimCandidate(ResultSet resultSet, int rowNumber) throws SQLException {
-        return new OutboxClaimCandidate(
+    private ClaimedOutboxEvent mapClaimedEvent(ResultSet resultSet, int rowNumber) throws SQLException {
+        return new ClaimedOutboxEvent(
                 resultSet.getObject("id", UUID.class),
                 resultSet.getObject("aggregate_id", UUID.class),
                 resultSet.getString("event_type"),
                 resultSet.getString("payload"),
-                resultSet.getInt("attempt_count")
+                resultSet.getInt("attempt_count"),
+                resultSet.getObject("claim_token", UUID.class)
         );
+    }
+
+    private OffsetDateTime toDatabaseTimestamp(Instant instant) {
+        return instant.atOffset(ZoneOffset.UTC);
     }
 
     private void requireClaim(int updated, UUID eventId) {
@@ -147,24 +142,5 @@ class OutboxDispatchPersistenceAdapter implements ClaimOutboxEventsPort, UpdateO
         }
     }
 
-    private record OutboxClaimCandidate(
-            UUID id,
-            UUID aggregateId,
-            String eventType,
-            String payload,
-            int attemptCount
-    ) {
-
-        ClaimedOutboxEvent claimedWith(UUID claimToken) {
-            return new ClaimedOutboxEvent(
-                    id,
-                    aggregateId,
-                    eventType,
-                    payload,
-                    attemptCount,
-                    claimToken
-            );
-        }
-    }
 }
 
