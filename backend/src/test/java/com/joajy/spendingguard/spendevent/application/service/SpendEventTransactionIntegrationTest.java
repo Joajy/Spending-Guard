@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.willThrow;
 
-@SpringBootTest
+@SpringBootTest(properties = "spending-guard.outbox.publisher.enabled=false")
 @Testcontainers(disabledWithoutDocker = true)
 class SpendEventTransactionIntegrationTest {
 
@@ -60,3 +60,4 @@ class SpendEventTransactionIntegrationTest {
         assertThat(rawSpendEventRepository.count()).isZero();
     }
 }
+

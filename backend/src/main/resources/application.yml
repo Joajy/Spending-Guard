@@ -15,6 +15,24 @@ spring:
           time_zone: UTC
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      acks: all
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      properties:
+        enable.idempotence: true
+
+spending-guard:
+  outbox:
+    publisher:
+      enabled: ${OUTBOX_PUBLISHER_ENABLED:true}
+      topic: ${OUTBOX_PUBLISHER_TOPIC:spend-event.received.v1}
+      batch-size: ${OUTBOX_PUBLISHER_BATCH_SIZE:20}
+      fixed-delay: ${OUTBOX_PUBLISHER_FIXED_DELAY:1000}
+      lease-duration: ${OUTBOX_PUBLISHER_LEASE_DURATION:30s}
+      retry-base-delay: ${OUTBOX_PUBLISHER_RETRY_BASE_DELAY:5s}
+      retry-max-delay: ${OUTBOX_PUBLISHER_RETRY_MAX_DELAY:5m}
+      send-timeout: ${OUTBOX_PUBLISHER_SEND_TIMEOUT:5s}
 
 server:
   shutdown: graceful
@@ -23,7 +41,8 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,metrics
   endpoint:
     health:
       show-details: never
+

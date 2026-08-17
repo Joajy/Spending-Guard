@@ -33,6 +33,21 @@ Postman에서는 저장소의 `postman/Spending-Guard.postman_collection.json`�
 
 로컬 기본값은 `application.yml`에 정의되어 있습니다. 실제 비밀번호나 외부 서비스 키는 파일에 저장하지 않고 환경 변수로 주입합니다.
 
+접수 트랜잭션에서 생성된 Outbox 이벤트는 `spend-event.received.v1` Kafka 토픽으로 발행됩니다. 여러 애플리케이션 인스턴스가 동시에 실행되어도 PostgreSQL의 `FOR UPDATE SKIP LOCKED`와 만료 가능한 임대로 서로 다른 이벤트를 가져갑니다. 전송 실패 건은 지수 백오프로 다시 시도하며, 발행 성공 뒤 상태 반영에 실패한 경우에는 같은 `eventId`가 다시 전달될 수 있습니다.
+
+주요 설정은 환경 변수로 변경할 수 있습니다.
+
+```text
+OUTBOX_PUBLISHER_ENABLED=true
+OUTBOX_PUBLISHER_BATCH_SIZE=20
+OUTBOX_PUBLISHER_LEASE_DURATION=30s
+OUTBOX_PUBLISHER_RETRY_BASE_DELAY=5s
+OUTBOX_PUBLISHER_RETRY_MAX_DELAY=5m
+OUTBOX_PUBLISHER_SEND_TIMEOUT=5s
+```
+
+발행 성공·실패와 배치 처리 시간은 `/actuator/metrics`에서 `spending.guard.outbox`로 시작하는 지표를 조회할 수 있습니다.
+
 ## 패키지 구조
 
 기능을 먼저 나누고, 기능 안에서는 책임별로 분리합니다.
@@ -57,12 +72,23 @@ com.joajy.spendingguard
 │       ├── config
 │       └── persistence
 ├── outbox
+│   ├── application
+│   │   ├── exception
+│   │   ├── model
+│   │   ├── port
+│   │   ├── result
+│   │   └── service
+│   ├── domain
+│   │   └── policy
 │   └── infrastructure
-│       └── persistence
+│       ├── config
+│       ├── messaging
+│       ├── persistence
+│       └── scheduling
 └── support
 ```
 
-Controller는 입력 포트로 유스케이스를 호출하고, 애플리케이션은 출력 포트를 통해 PostgreSQL과 Outbox에 접근합니다. 도메인은 Spring과 JPA에 의존하지 않으며 이 규칙은 ArchUnit 테스트로 확인합니다.
+Controller는 입력 포트로 유스케이스를 호출하고, 애플리케이션은 출력 포트를 통해 PostgreSQL, Outbox, Kafka에 접근합니다. 도메인은 Spring과 JPA에 의존하지 않으며 이 규칙은 ArchUnit 테스트로 확인합니다.
 
 ## 테스트
 
@@ -79,3 +105,4 @@ macOS 또는 Linux:
 ```
 
 테스트 결과는 `build/reports/tests/test/index.html`, 커버리지는 `build/reports/jacoco/test/html/index.html`에서 확인할 수 있습니다.
+

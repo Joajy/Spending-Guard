@@ -46,6 +46,18 @@ public class OutboxEventEntity {
     @Column(name = "published_at")
     private Instant publishedAt;
 
+    @Column(name = "next_attempt_at", nullable = false)
+    private Instant nextAttemptAt;
+
+    @Column(name = "claim_token")
+    private UUID claimToken;
+
+    @Column(name = "claimed_until")
+    private Instant claimedUntil;
+
+    @Column(name = "last_error_code", length = 100)
+    private String lastErrorCode;
+
     protected OutboxEventEntity() {
     }
 
@@ -58,6 +70,11 @@ public class OutboxEventEntity {
         this.status = OutboxStatus.PENDING;
         this.attemptCount = 0;
         this.createdAt = createdAt;
+        this.nextAttemptAt = createdAt;
+    }
+
+    public UUID getId() {
+        return id;
     }
 
     public UUID getAggregateId() {
@@ -75,4 +92,29 @@ public class OutboxEventEntity {
     public String getStatus() {
         return status.name();
     }
+
+    public int getAttemptCount() {
+        return attemptCount;
+    }
+
+    public Instant getPublishedAt() {
+        return publishedAt;
+    }
+
+    public Instant getNextAttemptAt() {
+        return nextAttemptAt;
+    }
+
+    public UUID getClaimToken() {
+        return claimToken;
+    }
+
+    public Instant getClaimedUntil() {
+        return claimedUntil;
+    }
+
+    public String getLastErrorCode() {
+        return lastErrorCode;
+    }
 }
+
