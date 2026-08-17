@@ -53,6 +53,27 @@ class OutboxDispatchPersistenceIntegrationTest {
     }
 
     @Test
+    void claimsOnlyConfiguredBatchAndUsesOneLeaseToken() {
+        storePendingEvent();
+        storePendingEvent();
+        storePendingEvent();
+
+        List<ClaimedOutboxEvent> firstBatch = adapter.claim(2, NOW, NOW.plusSeconds(30));
+        List<ClaimedOutboxEvent> secondBatch = adapter.claim(2, NOW, NOW.plusSeconds(30));
+
+        assertThat(firstBatch).hasSize(2);
+        assertThat(firstBatch)
+                .extracting(ClaimedOutboxEvent::claimToken)
+                .containsOnly(firstBatch.getFirst().claimToken());
+        assertThat(secondBatch).hasSize(1);
+        assertThat(secondBatch)
+                .extracting(ClaimedOutboxEvent::id)
+                .doesNotContainAnyElementsOf(
+                        firstBatch.stream().map(ClaimedOutboxEvent::id).toList()
+                );
+    }
+
+    @Test
     void expiredLeaseCanBeClaimedByAnotherWorker() {
         storePendingEvent();
         ClaimedOutboxEvent firstClaim = adapter.claim(1, NOW, NOW.plusSeconds(10)).getFirst();

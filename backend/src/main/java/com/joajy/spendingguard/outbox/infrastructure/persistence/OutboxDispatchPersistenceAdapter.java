@@ -18,29 +18,27 @@ import org.springframework.transaction.annotation.Transactional;
 @Component
 class OutboxDispatchPersistenceAdapter implements ClaimOutboxEventsPort, UpdateOutboxEventStatePort {
 
-    private static final String CLAIM_SQL = """
-            WITH candidates AS (
-                SELECT id
-                FROM outbox_event
-                WHERE (status = 'PENDING' AND next_attempt_at <= :claimedAt)
-                   OR (status = 'PROCESSING' AND claimed_until <= :claimedAt)
-                ORDER BY created_at
-                LIMIT :batchSize
-                FOR UPDATE SKIP LOCKED
-            )
-            UPDATE outbox_event AS event
+    private static final String SELECT_CLAIM_CANDIDATES_SQL = """
+            SELECT id,
+                   aggregate_id,
+                   event_type,
+                   CAST(payload AS text) AS payload,
+                   attempt_count
+            FROM outbox_event
+            WHERE (status = 'PENDING' AND next_attempt_at <= :claimedAt)
+               OR (status = 'PROCESSING' AND claimed_until <= :claimedAt)
+            ORDER BY created_at
+            LIMIT :batchSize
+            FOR UPDATE SKIP LOCKED
+            """;
+
+    private static final String CLAIM_CANDIDATES_SQL = """
+            UPDATE outbox_event
             SET status = 'PROCESSING',
                 claim_token = :claimToken,
                 claimed_until = :claimedUntil,
                 last_error_code = NULL
-            FROM candidates
-            WHERE event.id = candidates.id
-            RETURNING event.id,
-                      event.aggregate_id,
-                      event.event_type,
-                      event.payload::text AS payload,
-                      event.attempt_count,
-                      event.claim_token
+            WHERE id IN (:eventIds)
             """;
 
     private static final String MARK_PUBLISHED_SQL = """
@@ -81,14 +79,28 @@ class OutboxDispatchPersistenceAdapter implements ClaimOutboxEventsPort, UpdateO
             Instant claimedAt,
             Instant claimedUntil
     ) {
-        UUID claimToken = UUID.randomUUID();
-        return jdbcClient.sql(CLAIM_SQL)
+        List<OutboxClaimCandidate> candidates = jdbcClient.sql(SELECT_CLAIM_CANDIDATES_SQL)
                 .param("batchSize", batchSize)
                 .param("claimedAt", claimedAt)
+                .query(this::mapClaimCandidate)
+                .list();
+        if (candidates.isEmpty()) {
+            return List.of();
+        }
+
+        UUID claimToken = UUID.randomUUID();
+        int updated = jdbcClient.sql(CLAIM_CANDIDATES_SQL)
+                .param("eventIds", candidates.stream().map(OutboxClaimCandidate::id).toList())
                 .param("claimedUntil", claimedUntil)
                 .param("claimToken", claimToken)
-                .query(this::mapClaimedEvent)
-                .list();
+                .update();
+        if (updated != candidates.size()) {
+            throw new IllegalStateException("Outbox claim update count does not match selected candidates");
+        }
+
+        return candidates.stream()
+                .map(candidate -> candidate.claimedWith(claimToken))
+                .toList();
     }
 
     @Override
@@ -119,20 +131,39 @@ class OutboxDispatchPersistenceAdapter implements ClaimOutboxEventsPort, UpdateO
         requireClaim(updated, eventId);
     }
 
-    private ClaimedOutboxEvent mapClaimedEvent(ResultSet resultSet, int rowNumber) throws SQLException {
-        return new ClaimedOutboxEvent(
+    private OutboxClaimCandidate mapClaimCandidate(ResultSet resultSet, int rowNumber) throws SQLException {
+        return new OutboxClaimCandidate(
                 resultSet.getObject("id", UUID.class),
                 resultSet.getObject("aggregate_id", UUID.class),
                 resultSet.getString("event_type"),
                 resultSet.getString("payload"),
-                resultSet.getInt("attempt_count"),
-                resultSet.getObject("claim_token", UUID.class)
+                resultSet.getInt("attempt_count")
         );
     }
 
     private void requireClaim(int updated, UUID eventId) {
         if (updated != 1) {
             throw new OutboxClaimLostException(eventId);
+        }
+    }
+
+    private record OutboxClaimCandidate(
+            UUID id,
+            UUID aggregateId,
+            String eventType,
+            String payload,
+            int attemptCount
+    ) {
+
+        ClaimedOutboxEvent claimedWith(UUID claimToken) {
+            return new ClaimedOutboxEvent(
+                    id,
+                    aggregateId,
+                    eventType,
+                    payload,
+                    attemptCount,
+                    claimToken
+            );
         }
     }
 }

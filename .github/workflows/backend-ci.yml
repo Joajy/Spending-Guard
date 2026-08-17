@@ -123,6 +123,7 @@ jobs:
       DB_URL: jdbc:postgresql://localhost:5432/spending_guard
       DB_USERNAME: spending_guard
       DB_PASSWORD: local_password
+      OUTBOX_PUBLISHER_ENABLED: "false"
 
     steps:
       - name: Checkout repository
@@ -197,3 +198,4 @@ jobs:
           path: backend/build/postman
           if-no-files-found: warn
           retention-days: 14
+
