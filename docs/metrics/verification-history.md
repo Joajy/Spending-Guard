@@ -4,26 +4,26 @@
 
 ## 최신 검증 결과
 
-기준: `feat/spend-event-processing`, Backend CI #25, 2026-08-18
+기준: `feat/spend-event-status-query`, Backend CI #28, 2026-08-18
 
 | 구분 | 결과 | 측정 범위 |
 |---|---:|---|
-| 백엔드 테스트 | 75/75 통과 | 단위·통합·동시성·Kafka 종단 테스트 |
+| 백엔드 테스트 | 84/84 통과 | 단위·Web MVC·PostgreSQL 통합·Kafka 종단 테스트 |
 | 테스트 실패·오류·건너뜀 | 0/0/0 | Gradle 전체 테스트 결과 |
-| 라인 커버리지 | 91.92% | JaCoCo 대상 애플리케이션 코드 |
-| 브랜치 커버리지 | 77.88% | JaCoCo 대상 애플리케이션 코드 |
+| 라인 커버리지 | 92.74% | JaCoCo 대상 애플리케이션 코드 |
+| 브랜치 커버리지 | 78.18% | JaCoCo 대상 애플리케이션 코드 |
 | 빠른 파서 정답률 | 25/25, 100.00% | 저장소에 고정한 회귀 데이터셋 |
-| Postman 요청 | 4/4 성공 | 소비 이벤트 수집 API 정상·오류 시나리오 |
-| Postman assertion | 8/8 통과 | 상태 코드·응답 계약 검증 |
-| Postman 평균 응답 시간 | 37.50ms | GitHub Actions 단일 기능 회귀 실행 |
+| Postman 요청 | 6/6 성공 | 상태 확인·접수·조회·중복 시나리오 |
+| Postman assertion | 14/14 통과 | 상태 코드·응답 계약 검증 |
+| Postman 평균 응답 시간 | 34.67ms | GitHub Actions 전체 API 회귀 실행 |
 | 중복 이벤트 동시 처리 | 최초 처리 1건, 중복 판정 7건 | 동일 이벤트를 8개 스레드에서 처리 |
 | 중복 업무 쓰기 | 0건 | PostgreSQL 고유 제약과 원자적 선점 검증 |
 
 증빙:
 
-- [GitHub Actions 실행 결과](https://github.com/Joajy/Spending-Guard/actions/runs/32139229300)
-- [백엔드 테스트·JaCoCo 보고서](https://github.com/Joajy/Spending-Guard/actions/runs/32139229300/artifacts/9325256491)
-- [Postman 보고서](https://github.com/Joajy/Spending-Guard/actions/runs/32139229300/artifacts/9325220494)
+- [GitHub Actions 실행 결과](https://github.com/Joajy/Spending-Guard/actions/runs/32141291250)
+- [백엔드 테스트·JaCoCo 보고서](https://github.com/Joajy/Spending-Guard/actions/runs/32141291250/artifacts/9326041906)
+- [Postman 보고서](https://github.com/Joajy/Spending-Guard/actions/runs/32141291250/artifacts/9326005188)
 
 Artifact는 보존 기간이 지나면 내려받을 수 없으므로 실행 결과 링크와 핵심 수치를 함께 남긴다.
 
@@ -50,6 +50,21 @@ Artifact는 보존 기간이 지나면 내려받을 수 없으므로 실행 결�
 
 ### 소비 이벤트 멱등 처리와 빠른 파싱
 
+기준: `feat/spend-event-processing`, Backend CI #25, 2026-08-18
+
+| 구분 | 결과 |
+|---|---:|
+| 백엔드 테스트 | 75/75 통과 |
+| 테스트 실패·오류·건너뜀 | 0/0/0 |
+| 라인 커버리지 | 91.92% |
+| 브랜치 커버리지 | 77.88% |
+| 빠른 파서 정답률 | 25/25, 100.00% |
+| Postman 요청 | 4/4 성공 |
+| Postman assertion | 8/8 통과 |
+| Postman 평균 응답 시간 | 37.50ms |
+
+증빙: [GitHub Actions 실행 결과](https://github.com/Joajy/Spending-Guard/actions/runs/32139229300)
+
 실제 Embedded Kafka와 PostgreSQL 컨테이너를 함께 사용해 다음 경계를 검증했다.
 
 - 동일 Kafka 메시지를 두 번 전달해도 분석 결과는 한 건만 저장된다.
@@ -59,6 +74,29 @@ Artifact는 보존 기간이 지나면 내려받을 수 없으므로 실행 결�
 - 8개 스레드가 같은 이벤트를 처리해도 최초 처리자 한 명만 업무 쓰기를 수행한다.
 
 초기 통합 테스트에서는 상태 변경 쿼리 전에 파싱 결과가 flush되지 않아 3건이 실패했다. 쓰기 순서를 명시하도록 수정한 뒤 전체 회귀 테스트를 다시 실행해 75/75 통과를 확인했다. 실패를 포함한 실행 이력은 같은 PR의 Actions 기록에서 확인할 수 있다.
+
+### 소비 이벤트 상태 조회
+
+기준: `feat/spend-event-status-query`, Backend CI #28, 2026-08-18
+
+| 구분 | 결과 |
+|---|---:|
+| 백엔드 테스트 | 84/84 통과 |
+| 테스트 실패·오류·건너뜀 | 0/0/0 |
+| 라인 커버리지 | 92.74% |
+| 브랜치 커버리지 | 78.18% |
+| Postman 요청 | 6/6 성공 |
+| Postman assertion | 14/14 통과 |
+| Postman 평균 응답 시간 | 34.67ms |
+
+다음 조회 경계를 실제 PostgreSQL과 HTTP 회귀 테스트로 확인했다.
+
+- 분석 전 이벤트는 `RECEIVED` 상태와 `fastParse=null`로 조회된다.
+- 분석 후 이벤트는 원천 상태와 파싱 결과를 한 응답으로 반환한다.
+- 존재하지 않는 UUID는 404, 형식이 잘못된 UUID는 400 Problem Details로 구분된다.
+- Postman은 이벤트를 접수한 뒤 반환된 식별자로 같은 리소스를 다시 조회한다.
+
+증빙: [GitHub Actions 실행 결과](https://github.com/Joajy/Spending-Guard/actions/runs/32141291250)
 
 ## 수치 해석 기준
 
@@ -73,7 +111,8 @@ Artifact는 보존 기간이 지나면 내려받을 수 없으므로 실행 결�
 - Testcontainers 기반 PostgreSQL과 Embedded Kafka를 사용하는 자동 검증 환경을 구성했다.
 - Kafka 중복 전달 상황에서 데이터베이스 고유 제약과 원자적 INSERT를 이용해 중복 업무 쓰기 0건을 확인했다.
 - 8개 스레드의 동시 재전달에서 최초 처리 1건과 중복 판정 7건으로 일관된 결과를 확인했다.
-- 현재 회귀 범위에서 백엔드 테스트 75건과 Postman assertion 8건을 모두 통과했다.
+- 현재 회귀 범위에서 백엔드 테스트 84건과 Postman assertion 14건을 모두 통과했다.
+- 접수 후 반환된 이벤트 식별자를 이용해 비동기 상태를 다시 조회하는 API 흐름을 6개 Postman 요청으로 검증했다.
 - 빠른 파서는 공개한 25건의 회귀 데이터셋에서 25건을 정확히 분류했다.
 
 위 문장은 해당 실행 시점의 사실이다. 표본이 확대되면 최신 결과와 조건으로 갱신한다.
