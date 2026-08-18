@@ -11,6 +11,16 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+/**
+ * 설정된 간격마다 Outbox 발행 유스케이스를 시작하는 스케줄링 어댑터다.
+ *
+ * <p>{@code fixedDelay} 방식이므로 이전 실행이 끝난 뒤 설정된 시간만큼 기다리고 다음
+ * 배치를 시작한다. 한 인스턴스 안에서 실행이 겹치지 않으며, 여러 인스턴스의 경쟁은
+ * 영속성 어댑터의 임대 기반 선점이 조정한다.
+ *
+ * <p>발행 성공·실패 건수, 배치 자체의 실패 횟수, 실행 시간을 Micrometer로 기록한다.
+ * 예상하지 못한 예외는 스케줄러 경계에서 기록해 다음 주기의 실행이 중단되지 않게 한다.
+ */
 @Component
 @ConditionalOnProperty(
         name = "spending-guard.outbox.publisher.enabled",
@@ -60,4 +70,3 @@ class OutboxPublishScheduler {
         }
     }
 }
-

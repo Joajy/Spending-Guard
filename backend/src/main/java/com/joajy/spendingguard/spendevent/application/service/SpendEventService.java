@@ -18,6 +18,21 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+/**
+ * 소비 알림을 안전한 원천 이벤트로 접수하고 후속 처리를 위한 도메인 이벤트를 기록하는 유스케이스다.
+ *
+ * <p><strong>처리 순서:</strong> 서버 식별자와 접수 시각을 만든 뒤 외부 식별자를
+ * 정규화하고, 중복 키를 계산하고, 메시지의 민감 정보를 제거한다. 정제가 끝난
+ * {@link RawSpendEvent}만 영속성 포트로 전달한다.
+ *
+ * <p><strong>트랜잭션 경계:</strong> 원천 이벤트와 {@link SpendEventReceived} Outbox 행을
+ * 하나의 트랜잭션으로 저장한다. 어느 한쪽이라도 실패하면 전체 접수를 롤백해 저장된
+ * 소비 데이터에 대응하는 분석 이벤트가 유실되지 않게 한다.
+ *
+ * <p><strong>동시 중복 요청:</strong> 사전 조회로 중복을 판단하지 않는다. 여러 요청이
+ * 동시에 들어와도 데이터베이스 고유 제약이 최종 승자를 정하고, 나머지는 도메인 의미의
+ * 중복 접수 예외로 반환된다.
+ */
 @Service
 public class SpendEventService implements SubmitSpendEventUseCase {
 

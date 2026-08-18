@@ -13,6 +13,16 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
+/**
+ * 외부 발행을 기다리는 이벤트와 처리 상태를 {@code outbox_event} 테이블에 매핑하는 JPA 엔티티다.
+ *
+ * <p>업무 데이터와 같은 트랜잭션에서 {@code PENDING} 상태로 생성된다. 발행 시도 횟수,
+ * 다음 시도 시각, 임대 토큰과 만료 시각, 마지막 오류 코드를 보관해 프로세스 재시작
+ * 이후에도 발행 수명주기를 이어간다.
+ *
+ * <p>도메인 모델이 아닌 영속성 전용 모델이다. 상태 전이는 동시성 조건을 SQL에 함께
+ * 표현해야 하므로 엔티티 변경 메서드가 아니라 dispatch 어댑터가 담당한다.
+ */
 @Entity
 @Table(name = "outbox_event")
 public class OutboxEventEntity {
@@ -58,6 +68,7 @@ public class OutboxEventEntity {
     @Column(name = "last_error_code", length = 100)
     private String lastErrorCode;
 
+    /** JPA 프록시와 리플렉션 기반 생성을 위한 생성자. */
     protected OutboxEventEntity() {
     }
 
@@ -117,4 +128,3 @@ public class OutboxEventEntity {
         return lastErrorCode;
     }
 }
-
