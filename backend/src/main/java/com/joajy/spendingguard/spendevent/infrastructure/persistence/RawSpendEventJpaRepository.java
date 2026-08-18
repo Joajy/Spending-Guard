@@ -21,7 +21,7 @@ import org.springframework.data.repository.query.Param;
  */
 public interface RawSpendEventJpaRepository extends JpaRepository<RawSpendEventEntity, UUID> {
 
-    @Modifying(clearAutomatically = true)
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("update RawSpendEventEntity event set event.status = :status where event.id = :eventId")
     int updateStatus(
             @Param("eventId") UUID eventId,
