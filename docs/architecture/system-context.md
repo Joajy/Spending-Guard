@@ -1,5 +1,8 @@
 # System Context and Runtime Flow
 
+현재 구현된 소비 이벤트 접수와 Outbox 클래스의 도입 이유와 책임은
+[백엔드 컴포넌트 가이드](backend-components.md)에 정리한다.
+
 ## 1. 시스템 경계
 
 SpendGuard는 소비 이벤트를 수집·분석하는 서비스다. 실제 결제를 승인하거나 은행 계좌에서 자금을 이동하지 않는다.
