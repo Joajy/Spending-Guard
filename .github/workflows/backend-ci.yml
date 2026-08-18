@@ -52,10 +52,18 @@ jobs:
           import xml.etree.ElementTree as ET
 
           totals = {"tests": 0, "failures": 0, "errors": 0, "skipped": 0}
+          parser_evaluation = {"tests": 0, "failed": 0, "skipped": 0}
           for report in glob.glob("build/test-results/test/TEST-*.xml"):
               suite = ET.parse(report).getroot()
               for key in totals:
                   totals[key] += int(suite.attrib.get(key, 0))
+              if suite.attrib.get("name", "").endswith("FastSpendEventParserEvaluationTest"):
+                  parser_evaluation["tests"] += int(suite.attrib.get("tests", 0))
+                  parser_evaluation["failed"] += (
+                      int(suite.attrib.get("failures", 0))
+                      + int(suite.attrib.get("errors", 0))
+                  )
+                  parser_evaluation["skipped"] += int(suite.attrib.get("skipped", 0))
 
           executed = totals["tests"] - totals["skipped"]
           passed = executed - totals["failures"] - totals["errors"]
@@ -78,10 +86,18 @@ jobs:
               total = covered + missed
               return covered / total * 100 if total else 0.0
 
+          parser_executed = parser_evaluation["tests"] - parser_evaluation["skipped"]
+          parser_correct = parser_executed - parser_evaluation["failed"]
+          parser_accuracy = (
+              parser_correct / parser_executed * 100 if parser_executed else 0.0
+          )
+
           summary = (
               f"Tests: {passed}/{executed} passed ({pass_rate:.2f}%)\n"
               f"Failures: {totals['failures']}, Errors: {totals['errors']}, "
               f"Skipped: {totals['skipped']}\n"
+              f"Fast parser evaluation: {parser_correct}/{parser_executed} correct "
+              f"({parser_accuracy:.2f}%)\n"
               f"Line coverage: {percentage('LINE'):.2f}%\n"
               f"Branch coverage: {percentage('BRANCH'):.2f}%"
           )
@@ -124,6 +140,7 @@ jobs:
       DB_USERNAME: spending_guard
       DB_PASSWORD: local_password
       OUTBOX_PUBLISHER_ENABLED: "false"
+      SPEND_EVENT_CONSUMER_ENABLED: "false"
 
     steps:
       - name: Checkout repository
@@ -198,4 +215,3 @@ jobs:
           path: backend/build/postman
           if-no-files-found: warn
           retention-days: 14
-

@@ -2,7 +2,11 @@ package com.joajy.spendingguard.spendevent.infrastructure.persistence;
 
 import java.util.UUID;
 
+import com.joajy.spendingguard.spendevent.domain.model.SpendEventStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 /**
  * 원천 소비 이벤트 엔티티의 기본 영속성 연산을 제공하는 Spring Data 저장소다.
@@ -16,4 +20,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
  * 도메인 계약만 알며, 기술 예외 변환과 flush 시점은 어댑터 한곳에서 통제한다.
  */
 public interface RawSpendEventJpaRepository extends JpaRepository<RawSpendEventEntity, UUID> {
+
+    @Modifying(clearAutomatically = true)
+    @Query("update RawSpendEventEntity event set event.status = :status where event.id = :eventId")
+    int updateStatus(
+            @Param("eventId") UUID eventId,
+            @Param("status") SpendEventStatus status
+    );
 }

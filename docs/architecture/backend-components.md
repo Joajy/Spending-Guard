@@ -1,6 +1,7 @@
 # 백엔드 컴포넌트 가이드
 
-이 문서는 현재 구현된 소비 이벤트 접수와 Outbox 발행 코드가 왜 필요한지 설명한다.
+이 문서는 현재 구현된 소비 이벤트 접수, Outbox 발행, Kafka 소비와 빠른 분석 코드가
+왜 필요한지 설명한다.
 클래스 이름을 다시 풀어 쓰는 목록이 아니라, 어떤 문제를 해결하기 위해 경계를 나눴고
 각 컴포넌트를 없앴을 때 무엇이 깨지는지를 기준으로 정리했다.
 
@@ -30,6 +31,10 @@ SpendGuard의 분석·예산·위험 탐지는 입력 데이터가 안전하게 
 | 비동기 Kafka 발행 | Kafka 지연이나 장애가 접수 API로 전파되지 않는다 | 스케줄러가 Outbox를 별도로 선점해 발행 |
 | 다중 작업자 선점 | 인스턴스가 늘어나도 같은 유효 임대가 중복 처리되지 않는다 | `FOR UPDATE SKIP LOCKED`, claim token, 임대 만료 |
 | 실패 재시도 | 일시적인 브로커 실패를 자동으로 다시 처리한다 | 제한이 있는 지수 백오프와 다음 시도 시각 저장 |
+| Consumer 중복 방지 | Kafka가 같은 이벤트를 다시 보내도 분석 결과가 한 번만 반영된다 | `processed_event` 고유 제약과 원자적 선점 |
+| 빠른 필수값 분석 | AI 응답을 기다리기 전에 금액과 거래유형을 구조화한다 | 버전이 있는 결정론적 원화·키워드 파서 |
+| 검토 사유 보존 | 모호한 알림을 임의로 확정하지 않고 확인 대상으로 남긴다 | `NEEDS_REVIEW` 상태와 안정적인 사유 코드 |
+| Consumer 실패 격리 | 잘못된 메시지나 반복 실패가 정상 메시지 처리를 막지 않는다 | 고정 간격 재시도와 Dead Letter Topic |
 | 운영 확인 | 업무 데이터를 만들지 않고 프로세스 응답 여부를 확인한다 | `GET /api/v1/status` |
 
 ## 한 건의 알림이 처리되는 과정
@@ -41,6 +46,7 @@ sequenceDiagram
     participant D as PostgreSQL
     participant P as Outbox Publisher
     participant K as Kafka
+    participant W as Spend Event Consumer
 
     C->>A: 소비 알림 텍스트
     A->>A: 검증·중복 키 계산·민감 문자열 정제
@@ -54,6 +60,13 @@ sequenceDiagram
         P->>D: PUBLISHED 기록
     else 발행 실패
         P->>D: PENDING + 다음 시도 시각 기록
+    end
+    K->>W: eventId 중심 메시지 전달
+    W->>D: processed_event 선점
+    alt 최초 처리
+        W->>D: Fast Parse 결과 + 이벤트 상태 저장
+    else 중복 재전달
+        W-->>K: 업무 쓰기 없이 정상 종료
     end
 ```
 
@@ -110,6 +123,42 @@ sequenceDiagram
 | `RawSpendEventEntity` | `raw_spend_event` 컬럼과 고유 제약 매핑 | JPA와 테이블 규칙이 도메인 모델로 퍼지지 않게 한다 |
 | `RawSpendEventJpaRepository` | 원천 이벤트 기본 영속성 연산 | Spring Data 의존성을 영속성 패키지 안에 가둔다 |
 | `RawSpendEventPersistenceAdapter` | 저장, 즉시 flush, 중복 예외 변환 | 고유 제약 위반을 현재 트랜잭션 안에서 도메인 오류로 바꾼다 |
+| `SpendEventAnalysisPersistenceAdapter` | 분석 입력 조회와 원천 이벤트 상태 변경 | 분석 모듈이 원천 이벤트 JPA 엔티티에 직접 의존하지 않게 한다 |
+
+### 빠른 분석 애플리케이션과 도메인
+
+| 컴포넌트 | 담고 있는 기능 | 별도로 필요한 이유 |
+|---|---|---|
+| `ProcessSpendEventUseCase` | Kafka 이외의 입력원도 호출할 수 있는 처리 계약 | 메시징 기술과 분석 유스케이스를 분리한다 |
+| `ProcessSpendEventCommand` | 원천 이벤트 식별자 기반 처리 명령 | Kafka DTO를 애플리케이션 표준 입력으로 사용하지 않게 한다 |
+| `SpendEventProcessingService` | 선점, 조회, 파싱, 저장, 상태 변경의 트랜잭션 | 중간 실패 시 선점까지 롤백되는 멱등 처리 경계를 한곳에 둔다 |
+| `SpendEventAnalysisTarget` | 분석에 필요한 정제 메시지와 발생 시각 | 원천 이벤트 엔티티 전체가 분석 계층으로 노출되지 않게 한다 |
+| `SpendEventProcessingResult` | 처리, 검토, 중복 건의 안정적인 결과 | 인프라 예외나 DB 갱신 수를 유스케이스 결과로 노출하지 않는다 |
+| `LoadSpendEventForAnalysisPort` | 분석 입력 조회 계약 | 분석 서비스가 원천 이벤트 저장 기술을 알지 않게 한다 |
+| `StoreFastParseResultPort` | 버전이 있는 빠른 분석 결과 저장 계약 | 결과 테이블과 JPA 사용 여부를 서비스에서 숨긴다 |
+| `TryClaimProcessedEventPort` | Consumer별 처리 권한 선점 계약 | 멱등성 구현을 단순 메모리 캐시가 아닌 영속성 경계에 위임한다 |
+| `UpdateSpendEventStatusPort` | 원천 이벤트 상태 변경 계약 | 분석 모듈이 원천 이벤트 엔티티를 직접 수정하지 않게 한다 |
+| `SpendEventNotFoundException` | 메시지가 가리키는 원천 이벤트 부재 | 재시도·DLQ 정책이 판별할 수 있는 안정적인 실패 의미를 만든다 |
+| `FastSpendEventParser` | 원화 금액과 거래유형의 결정론적 추출 | 외부 AI 장애 중에도 최소 분석 결과를 재현 가능하게 확보한다 |
+| `FastParseOutcome` | 추출 값, 상태, 검토 사유 | 불완전한 입력을 예외나 임의 기본값으로 숨기지 않는다 |
+| `FastParseStatus` | `PARSED`, `NEEDS_REVIEW` 구분 | 파서 성공과 사용자 확인 필요 상태를 명시적으로 관리한다 |
+| `TransactionType` | 결제, 취소, 환불 구분 | 이후 원장에서 금액의 부호와 보상 관계를 올바르게 결정한다 |
+
+### 빠른 분석 인프라
+
+| 컴포넌트 | 담고 있는 기능 | 별도로 필요한 이유 |
+|---|---|---|
+| `SpendEventKafkaListener` | 문자열 메시지 역직렬화와 유스케이스 호출 | Kafka 애노테이션과 payload 해석을 애플리케이션 계층에서 격리한다 |
+| `SpendEventReceivedMessage` | 버전 1 메시지 스키마 검증 | Producer와 Consumer 계약 변경을 명시적으로 감지한다 |
+| `InvalidSpendEventMessageException` | 복구 불가능한 메시지 계약 위반 | 일시적 오류와 구분해 불필요한 재시도 없이 DLQ로 보낸다 |
+| `SpendEventConsumerProperties` | 토픽, 그룹, 재시도, DLQ 설정 | 문자열 환경 변수를 시작 시점에 타입과 불변식으로 검증한다 |
+| `SpendEventAnalysisConfiguration` | 파서와 오류 처리기 조립 | 재시도·DLQ 정책을 Listener 구현과 분리한다 |
+| `ProcessedEventEntity` | Consumer별 처리 이력 매핑 | 재시작 이후에도 멱등성 판단 근거를 보존한다 |
+| `ProcessedEventJpaRepository` | `ON CONFLICT DO NOTHING` 원자적 선점 | 조회 후 삽입 경쟁 조건 없이 최초 처리자 한 명을 결정한다 |
+| `ProcessedEventPersistenceAdapter` | 갱신 행 수를 선점 성공 여부로 변환 | PostgreSQL SQL 의미를 애플리케이션의 boolean 계약으로 바꾼다 |
+| `FastParseResultEntity` | 추출 값, 버전, 검토 사유 컬럼 매핑 | 분석 이력을 재현하고 검토 대상의 이유를 보존한다 |
+| `FastParseResultJpaRepository` | 빠른 분석 결과 영속성 연산 | Spring Data 의존성을 영속성 패키지 안에 가둔다 |
+| `FastParseResultPersistenceAdapter` | 도메인 결과를 JPA 엔티티로 변환 | 파서와 서비스가 테이블 구조를 알지 않게 한다 |
 
 ### Outbox 애플리케이션과 도메인
 
@@ -143,13 +192,15 @@ sequenceDiagram
 ## 이 구조가 보장하는 것과 보장하지 않는 것
 
 현재 구현은 같은 알림의 중복 저장 방지, 원천 이벤트와 Outbox의 원자적 기록,
-다중 발행 작업자의 배타적 임대, 일시적인 Kafka 실패 재시도를 보장한다.
+다중 발행 작업자의 배타적 임대, 일시적인 Kafka 실패 재시도, Consumer 재전달의
+중복 반영 방지와 금액·거래유형의 빠른 분석을 보장한다.
 
 Kafka 발행과 DB 상태 변경은 하나의 분산 트랜잭션이 아니므로 메시지는 중복 발행될 수
-있다. 이 선택은 유실보다 중복을 허용하는 at-least-once 방식이며, 후속 Consumer는
-이벤트 ID로 멱등 처리해야 한다. 또한 현재 마스킹은 알려진 문자열 패턴에 대한 1차
-보호선이고 완전한 개인정보 탐지기가 아니다.
+있다. 이 선택은 유실보다 중복을 허용하는 at-least-once 방식이며, 현재 Consumer는
+이벤트 ID와 논리 이름으로 중복 반영을 막는다. 또한 현재 마스킹과 빠른 파서는 알려진
+문자열 패턴에 대한 1차 보호·분석 규칙이며 완전한 개인정보 탐지기나 모든 금융 알림
+형식을 지원하는 범용 파서가 아니다.
 
-AI 분류, 예산 원장, 위험 점수, 실제 금융사 연동은 아직 이 코드에 포함되지 않았다.
+가맹점·카테고리 AI 분류, 예산 원장, 위험 점수, 실제 금융사 연동은 아직 이 코드에 포함되지 않았다.
 앞단의 수집과 전달 신뢰성을 먼저 고정한 뒤 후속 기능이 같은 이벤트 계약 위에서
 추가되도록 설계했다.

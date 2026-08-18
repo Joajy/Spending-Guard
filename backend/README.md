@@ -35,6 +35,8 @@ Postman에서는 저장소의 `postman/Spending-Guard.postman_collection.json`�
 
 접수 트랜잭션에서 생성된 Outbox 이벤트는 `spend-event.received.v1` Kafka 토픽으로 발행됩니다. 여러 애플리케이션 인스턴스가 동시에 실행되어도 PostgreSQL의 `FOR UPDATE SKIP LOCKED`와 만료 가능한 임대로 서로 다른 이벤트를 가져갑니다. 전송 실패 건은 지수 백오프로 다시 시도하며, 발행 성공 뒤 상태 반영에 실패한 경우에는 같은 `eventId`가 다시 전달될 수 있습니다.
 
+Consumer는 전달된 `eventId`를 `processed_event`에 원자적으로 선점한 뒤 정제된 알림을 읽습니다. 같은 메시지가 동시에 재전달되어도 한 요청만 금액·거래유형 분석과 상태 변경을 수행합니다. 계약을 해석할 수 없는 메시지는 즉시 DLQ로 보내고, 일시적 처리 실패는 기본 3회 재시도한 뒤 DLQ로 이동합니다.
+
 주요 설정은 환경 변수로 변경할 수 있습니다.
 
 ```text
@@ -44,6 +46,11 @@ OUTBOX_PUBLISHER_LEASE_DURATION=30s
 OUTBOX_PUBLISHER_RETRY_BASE_DELAY=5s
 OUTBOX_PUBLISHER_RETRY_MAX_DELAY=5m
 OUTBOX_PUBLISHER_SEND_TIMEOUT=5s
+SPEND_EVENT_CONSUMER_ENABLED=true
+SPEND_EVENT_CONSUMER_GROUP_ID=spending-guard-fast-parser-v1
+SPEND_EVENT_CONSUMER_MAX_RETRIES=3
+SPEND_EVENT_CONSUMER_RETRY_BACKOFF=1s
+SPEND_EVENT_CONSUMER_DLT=spend-event.received.v1.DLT
 ```
 
 발행 성공·실패와 배치 처리 시간은 `/actuator/metrics`에서 `spending.guard.outbox`로 시작하는 지표를 조회할 수 있습니다.
@@ -54,6 +61,20 @@ OUTBOX_PUBLISHER_SEND_TIMEOUT=5s
 
 ```text
 com.joajy.spendingguard
+├── analysis
+│   ├── application
+│   │   ├── command
+│   │   ├── model
+│   │   ├── port
+│   │   ├── result
+│   │   └── service
+│   ├── domain
+│   │   ├── model
+│   │   └── policy
+│   └── infrastructure
+│       ├── config
+│       ├── messaging
+│       └── persistence
 ├── spendevent
 │   ├── api
 │   │   ├── controller
@@ -106,3 +127,4 @@ macOS 또는 Linux:
 
 테스트 결과는 `build/reports/tests/test/index.html`, 커버리지는 `build/reports/jacoco/test/html/index.html`에서 확인할 수 있습니다.
 
+GitHub Actions 실행 요약에는 전체 테스트 통과율, 빠른 파서 회귀 데이터셋 정확도, 라인·브랜치 커버리지가 함께 표시됩니다. HTML 테스트·커버리지 보고서는 각 실행의 `backend-test-reports` artifact에서 내려받을 수 있습니다.

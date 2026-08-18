@@ -84,4 +84,12 @@ public class RawSpendEventEntity {
     public String getSanitizedMessage() {
         return sanitizedMessage;
     }
+
+    public Instant getOccurredAt() {
+        return occurredAt;
+    }
+
+    public SpendEventStatus getStatus() {
+        return status;
+    }
 }
