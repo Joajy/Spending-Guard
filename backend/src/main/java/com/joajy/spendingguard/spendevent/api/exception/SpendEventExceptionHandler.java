@@ -2,6 +2,7 @@ package com.joajy.spendingguard.spendevent.api.exception;
 
 import com.joajy.spendingguard.spendevent.api.controller.SpendEventController;
 import com.joajy.spendingguard.spendevent.application.exception.DuplicateSpendEventException;
+import com.joajy.spendingguard.spendevent.application.exception.SpendEventNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
@@ -10,6 +11,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 /**
  * 소비 이벤트 API에서 발생하는 입력 오류와 중복 접수를 일관된 Problem Details 응답으로 변환한다.
@@ -28,6 +30,16 @@ class SpendEventExceptionHandler {
     @ExceptionHandler(DuplicateSpendEventException.class)
     ResponseEntity<ProblemDetail> handleDuplicate(DuplicateSpendEventException exception) {
         return problem(HttpStatus.CONFLICT, "Duplicate spend event", exception.getMessage());
+    }
+
+    @ExceptionHandler(SpendEventNotFoundException.class)
+    ResponseEntity<ProblemDetail> handleNotFound(SpendEventNotFoundException exception) {
+        return problem(HttpStatus.NOT_FOUND, "Spend event not found", exception.getMessage());
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    ResponseEntity<ProblemDetail> handleInvalidPath() {
+        return problem(HttpStatus.BAD_REQUEST, "Invalid request", "eventId 형식을 확인해 주세요.");
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -52,3 +64,4 @@ class SpendEventExceptionHandler {
                 .body(problem);
     }
 }
+
