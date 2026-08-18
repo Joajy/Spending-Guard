@@ -29,6 +29,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
+import org.springframework.test.annotation.DirtiesContext;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -54,6 +55,7 @@ import static org.assertj.core.api.Assertions.fail;
         },
         bootstrapServersProperty = "spring.kafka.bootstrap-servers"
 )
+@DirtiesContext
 @Testcontainers(disabledWithoutDocker = true)
 class SpendEventKafkaListenerIntegrationTest {
 
@@ -72,6 +74,9 @@ class SpendEventKafkaListenerIntegrationTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private EmbeddedKafkaBroker broker;
 
     @Autowired
     private FastParseResultJpaRepository fastParseResultRepository;
@@ -109,7 +114,7 @@ class SpendEventKafkaListenerIntegrationTest {
     }
 
     @Test
-    void routesUnsupportedSchemaToDeadLetterTopic(EmbeddedKafkaBroker broker) throws Exception {
+    void routesUnsupportedSchemaToDeadLetterTopic() throws Exception {
         Map<String, Object> consumerProperties = KafkaTestUtils.consumerProps(
                 "spend-event-dlt-verification-" + UUID.randomUUID(),
                 "true",
