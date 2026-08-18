@@ -21,6 +21,13 @@ spring:
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
       properties:
         enable.idempotence: true
+    consumer:
+      enable-auto-commit: false
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    listener:
+      ack-mode: record
 
 spending-guard:
   outbox:
@@ -33,6 +40,14 @@ spending-guard:
       retry-base-delay: ${OUTBOX_PUBLISHER_RETRY_BASE_DELAY:5s}
       retry-max-delay: ${OUTBOX_PUBLISHER_RETRY_MAX_DELAY:5m}
       send-timeout: ${OUTBOX_PUBLISHER_SEND_TIMEOUT:5s}
+  analysis:
+    consumer:
+      enabled: ${SPEND_EVENT_CONSUMER_ENABLED:true}
+      topic: ${SPEND_EVENT_CONSUMER_TOPIC:spend-event.received.v1}
+      group-id: ${SPEND_EVENT_CONSUMER_GROUP_ID:spending-guard-fast-parser-v1}
+      max-retries: ${SPEND_EVENT_CONSUMER_MAX_RETRIES:3}
+      retry-backoff: ${SPEND_EVENT_CONSUMER_RETRY_BACKOFF:1s}
+      dead-letter-topic: ${SPEND_EVENT_CONSUMER_DLT:spend-event.received.v1.DLT}
 
 server:
   shutdown: graceful
@@ -45,4 +60,3 @@ management:
   endpoint:
     health:
       show-details: never
-

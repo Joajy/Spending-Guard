@@ -8,5 +8,9 @@ package com.joajy.spendingguard.spendevent.domain.model;
  */
 public enum SpendEventStatus {
     /** 원천 데이터와 발행용 Outbox 이벤트가 저장된 상태. */
-    RECEIVED
+    RECEIVED,
+    /** 빠른 파싱이 끝나고 외부 분석 또는 규칙 보강을 기다리는 상태. */
+    ANALYZING,
+    /** 필수 정보를 규칙으로 확정하지 못해 사용자 확인이 필요한 상태. */
+    NEEDS_REVIEW
 }

@@ -28,7 +28,10 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@SpringBootTest(properties = "spending-guard.outbox.publisher.enabled=false")
+@SpringBootTest(properties = {
+        "spending-guard.outbox.publisher.enabled=false",
+        "spending-guard.analysis.consumer.enabled=false"
+})
 @Testcontainers(disabledWithoutDocker = true)
 class SpendEventPersistenceIntegrationTest {
 
@@ -177,4 +180,3 @@ class SpendEventPersistenceIntegrationTest {
         DUPLICATE
     }
 }
-

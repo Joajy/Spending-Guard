@@ -2,6 +2,8 @@
 
 현재 구현된 소비 이벤트 접수와 Outbox 클래스의 도입 이유와 책임은
 [백엔드 컴포넌트 가이드](backend-components.md)에 정리한다.
+Kafka Consumer의 멱등 처리와 빠른 파싱 흐름은
+[소비 이벤트 처리 흐름](spend-event-processing.md)에 정리한다.
 
 ## 1. 시스템 경계
 

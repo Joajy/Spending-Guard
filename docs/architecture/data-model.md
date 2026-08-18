@@ -6,6 +6,7 @@
 erDiagram
     USER ||--o{ MONTHLY_BUDGET : sets
     USER ||--o{ RAW_SPEND_EVENT : owns
+    RAW_SPEND_EVENT ||--o| FAST_PARSE_RESULT : parses
     RAW_SPEND_EVENT ||--o| NORMALIZED_TRANSACTION : produces
     RAW_SPEND_EVENT ||--o{ OUTBOX_EVENT : publishes
     NORMALIZED_TRANSACTION ||--o{ LEDGER_ENTRY : records
@@ -45,6 +46,24 @@ erDiagram
 UNIQUE(source, external_event_id) WHERE external_event_id IS NOT NULL
 UNIQUE(user_id, deduplication_key)
 ```
+
+### `fast_parse_result`
+
+외부 AI 호출 전에 확보한 결정론적 분석 결과다. 금액과 거래유형을 추출할 수 없는 경우에도
+행을 남겨 검토 사유를 추적한다.
+
+| 컬럼 | 설명 |
+|---|---|
+| `raw_event_id` | 원천 이벤트, Primary Key |
+| `amount` | 추출한 원화 금액, nullable |
+| `transaction_type` | PAYMENT, CANCEL, REFUND, nullable |
+| `status` | PARSED, NEEDS_REVIEW |
+| `review_reason` | 누락·모호성 사유 코드 |
+| `parser_version` | 재현 가능한 규칙 버전 |
+| `parsed_at` | 빠른 분석 완료 시각 |
+
+`PARSED` 상태는 금액과 거래유형이 모두 있어야 하며, `NEEDS_REVIEW`는 반드시 검토
+사유를 가진다. 이 조건은 애플리케이션뿐 아니라 데이터베이스 CHECK 제약으로도 확인한다.
 
 ### `normalized_transaction`
 
