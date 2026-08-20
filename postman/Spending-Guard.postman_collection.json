@@ -105,6 +105,34 @@
       ]
     },
     {
+      "name": "회원 등록 - 이메일 누락",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"password\": \"sample-password-123\"\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/users"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+              "pm.test('이메일 검증 사유를 반환한다', () => pm.expect(pm.response.json().detail).to.match(/^email:/));"
+            ]
+          }
+        }
+      ]
+    },
+    {
       "name": "서비스 상태 확인",
       "request": {
         "method": "GET",
