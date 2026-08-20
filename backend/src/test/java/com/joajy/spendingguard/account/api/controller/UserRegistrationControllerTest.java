@@ -14,7 +14,9 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -53,6 +55,30 @@ class UserRegistrationControllerTest {
                 .andExpect(jsonPath("$.email").value("user@example.com"))
                 .andExpect(jsonPath("$.password").doesNotExist())
                 .andExpect(jsonPath("$.passwordHash").doesNotExist());
+    }
+
+    @Test
+    void acceptsEmailWithSurroundingWhitespace() throws Exception {
+        UUID userId = UUID.fromString("9bbd364c-a952-42aa-91cb-f607603aa7d5");
+        given(registerUserUseCase.register(any())).willReturn(new UserRegistration(
+                userId,
+                "user@example.com",
+                Instant.parse("2026-08-20T01:00:00Z")
+        ));
+
+        mockMvc.perform(post("/api/v1/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "email": "  User@Example.COM  ",
+                                  "password": "safe-password-123"
+                                }
+                                """))
+                .andExpect(status().isCreated());
+
+        then(registerUserUseCase).should().register(argThat(command ->
+                command.email().equals("User@Example.COM")
+        ));
     }
 
     @Test
