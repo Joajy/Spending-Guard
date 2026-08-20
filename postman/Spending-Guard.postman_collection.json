@@ -49,9 +49,48 @@
           "listen": "test",
           "script": {
             "exec": [
+              "pm.collectionVariables.set('spendEventId', pm.response.json().eventId);",
               "pm.test('202 Accepted', () => pm.response.to.have.status(202));",
               "pm.test('RECEIVED 상태로 접수된다', () => pm.expect(pm.response.json().status).to.eql('RECEIVED'));",
               "pm.test('조회 경로가 Location에 포함된다', () => pm.expect(pm.response.headers.get('Location')).to.include('/api/v1/spend-events/'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "소비 이벤트 처리 상태 조회",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/spend-events/{{spendEventId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));",
+              "pm.test('접수한 이벤트를 조회한다', () => pm.expect(pm.response.json().eventId).to.eql(pm.collectionVariables.get('spendEventId')));",
+              "pm.test('대기 중 상태를 반환한다', () => pm.expect(pm.response.json().status).to.eql('RECEIVED'));",
+              "pm.test('분석 전에는 빠른 파싱 결과가 없다', () => pm.expect(pm.response.json().fastParse).to.eql(null));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "존재하지 않는 소비 이벤트 조회",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/spend-events/{{$guid}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('404 Not Found', () => pm.response.to.have.status(404));",
+              "pm.test('조회 실패 사유가 포함된다', () => pm.expect(pm.response.json().title).to.eql('Spend event not found'));"
             ]
           }
         }
@@ -122,3 +161,4 @@
     }
   ]
 }
+

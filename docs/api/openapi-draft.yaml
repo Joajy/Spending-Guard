@@ -1,8 +1,8 @@
 openapi: 3.1.0
 info:
   title: SpendGuard API
-  version: 0.1.0-draft
-  description: Day 1 API contract. Implementation starts after review.
+  version: 0.2.0-draft
+  description: 현재 구현과 후속 기능의 API 계약 초안
 servers:
   - url: http://localhost:8080
 tags:
@@ -235,25 +235,50 @@ components:
           format: date-time
     SpendEventDetail:
       type: object
-      required: [eventId, status, receivedAt]
+      required: [eventId, source, status, receivedAt]
       properties:
         eventId:
           type: string
           format: uuid
+        source:
+          type: string
+          enum: [MANUAL_TEXT, SIMULATOR]
         status:
           type: string
-          enum: [RECEIVED, PUBLISHED, ANALYZING, COMPLETED, NEEDS_REVIEW, RETRY_WAIT, DEAD_LETTERED]
+          enum: [RECEIVED, ANALYZING, NEEDS_REVIEW]
+        occurredAt:
+          type: [string, 'null']
+          format: date-time
         receivedAt:
           type: string
           format: date-time
-        transaction:
+        fastParse:
           oneOf:
-            - $ref: '#/components/schemas/Transaction'
+            - $ref: '#/components/schemas/FastParseResult'
             - type: 'null'
-        risk:
-          oneOf:
-            - $ref: '#/components/schemas/RiskAssessment'
-            - type: 'null'
+    FastParseResult:
+      type: object
+      required: [currency, status, parserVersion, parsedAt]
+      properties:
+        amount:
+          type: [number, 'null']
+          minimum: 0
+        currency:
+          type: string
+          const: KRW
+        transactionType:
+          type: [string, 'null']
+          enum: [PAYMENT, CANCEL, REFUND, null]
+        status:
+          type: string
+          enum: [PARSED, NEEDS_REVIEW]
+        reviewReason:
+          type: [string, 'null']
+        parserVersion:
+          type: string
+        parsedAt:
+          type: string
+          format: date-time
     Transaction:
       type: object
       required: [id, amount, currency, transactionType, category, confidence, occurredAt]
@@ -365,3 +390,4 @@ components:
           type: string
         traceId:
           type: string
+
