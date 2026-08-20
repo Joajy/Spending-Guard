@@ -4,27 +4,30 @@
 
 ```mermaid
 erDiagram
-    USER ||--o{ MONTHLY_BUDGET : sets
-    USER ||--o{ RAW_SPEND_EVENT : owns
+    USER_ACCOUNT ||--o{ MONTHLY_BUDGET : sets
+    USER_ACCOUNT ||--o{ RAW_SPEND_EVENT : owns
     RAW_SPEND_EVENT ||--o| FAST_PARSE_RESULT : parses
     RAW_SPEND_EVENT ||--o| NORMALIZED_TRANSACTION : produces
     RAW_SPEND_EVENT ||--o{ OUTBOX_EVENT : publishes
     NORMALIZED_TRANSACTION ||--o{ LEDGER_ENTRY : records
     NORMALIZED_TRANSACTION ||--o| RISK_ASSESSMENT : evaluates
-    USER ||--o{ MERCHANT_RULE : corrects
+    USER_ACCOUNT ||--o{ MERCHANT_RULE : corrects
     RAW_SPEND_EVENT ||--o{ PROCESSED_EVENT : deduplicates
 ```
 
 ## 2. 주요 테이블
 
-### `users`
+### `user_account`
 
 | 컬럼 | 설명 |
 |---|---|
 | `id` | 내부 UUID |
 | `email` | 로그인 식별자, Unique |
-| `password_hash` | 단방향 해시 |
+| `password_hash` | BCrypt 단방향 해시 |
 | `created_at` | 생성 시각 |
+
+이메일은 공백과 대소문자를 정규화한 뒤 저장하며 데이터베이스 고유 제약으로 동시 중복
+등록을 차단한다. 평문 비밀번호는 테이블과 API 응답에 남기지 않는다.
 
 ### `raw_spend_event`
 

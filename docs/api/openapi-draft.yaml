@@ -6,12 +6,39 @@ info:
 servers:
   - url: http://localhost:8080
 tags:
+  - name: Users
   - name: Spend Events
   - name: Transactions
   - name: Budgets
   - name: Dashboard
   - name: Integrations
 paths:
+  /api/v1/users:
+    post:
+      tags: [Users]
+      summary: Register a user account
+      operationId: registerUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterUserRequest'
+      responses:
+        '201':
+          description: User account created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserRegisteredResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Email already registered
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
   /api/v1/spend-events:
     post:
       tags: [Spend Events]
@@ -203,6 +230,32 @@ components:
           schema:
             $ref: '#/components/schemas/Problem'
   schemas:
+    RegisterUserRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 320
+        password:
+          type: string
+          format: password
+          minLength: 8
+          maxLength: 72
+    UserRegisteredResponse:
+      type: object
+      required: [userId, email, createdAt]
+      properties:
+        userId:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        createdAt:
+          type: string
+          format: date-time
     SubmitSpendEventRequest:
       type: object
       required: [source, message]
@@ -390,4 +443,3 @@ components:
           type: string
         traceId:
           type: string
-
