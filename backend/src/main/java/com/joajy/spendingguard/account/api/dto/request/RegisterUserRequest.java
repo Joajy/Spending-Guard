@@ -11,6 +11,12 @@ public record RegisterUserRequest(
         @NotBlank @Size(min = 8, max = 72) String password
 ) {
 
+    public RegisterUserRequest {
+        if (email != null) {
+            email = email.trim();
+        }
+    }
+
     public RegisterUserCommand toCommand() {
         return new RegisterUserCommand(email, password);
     }
