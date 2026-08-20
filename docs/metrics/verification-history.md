@@ -4,27 +4,27 @@
 
 ## 최신 검증 결과
 
-기준: `feat/user-registration`, Backend CI #31, 2026-08-20
+기준: `feat/user-registration`, Backend CI #35, 2026-08-21
 
 | 구분 | 결과 | 측정 범위 |
 |---|---:|---|
-| 백엔드 테스트 | 92/92 통과 | 단위·Web MVC·PostgreSQL 동시성·Kafka 종단 테스트 |
+| 백엔드 테스트 | 94/94 통과 | 단위·Web MVC·PostgreSQL 동시성·Kafka 종단 테스트 |
 | 테스트 실패·오류·건너뜀 | 0/0/0 | Gradle 전체 테스트 결과 |
-| 라인 커버리지 | 93.26% | JaCoCo 대상 애플리케이션 코드 |
-| 브랜치 커버리지 | 78.18% | JaCoCo 대상 애플리케이션 코드 |
+| 라인 커버리지 | 93.29% | JaCoCo 대상 애플리케이션 코드 |
+| 브랜치 커버리지 | 78.57% | JaCoCo 대상 애플리케이션 코드 |
 | 빠른 파서 정답률 | 25/25, 100.00% | 저장소에 고정한 회귀 데이터셋 |
 | Postman 요청 | 9/9 성공 | 회원 등록·상태 확인·소비 이벤트 시나리오 |
 | Postman assertion | 22/22 통과 | 상태 코드·응답 계약·민감정보 비노출 검증 |
-| Postman 평균 응답 시간 | 103.78ms | BCrypt 회원 등록을 포함한 전체 API 회귀 실행 |
+| Postman 평균 응답 시간 | 84.89ms | BCrypt 회원 등록을 포함한 전체 API 회귀 실행 |
 | 동시 이메일 등록 | 최초 등록 1건, 중복 판정 7건 | 동일 이메일을 8개 스레드에서 저장 |
 | 중복 이벤트 동시 처리 | 최초 처리 1건, 중복 판정 7건 | 동일 이벤트를 8개 스레드에서 처리 |
 | 중복 업무 쓰기 | 0건 | PostgreSQL 고유 제약과 원자적 선점 검증 |
 
 증빙:
 
-- [GitHub Actions 실행 결과](https://github.com/Joajy/Spending-Guard/actions/runs/32380613858)
-- [백엔드 테스트·JaCoCo 보고서](https://github.com/Joajy/Spending-Guard/actions/runs/32380613858/artifacts/9410926744)
-- [Postman 보고서](https://github.com/Joajy/Spending-Guard/actions/runs/32380613858/artifacts/9410883657)
+- [GitHub Actions 실행 결과](https://github.com/Joajy/Spending-Guard/actions/runs/32423006746)
+- [백엔드 테스트·JaCoCo 보고서](https://github.com/Joajy/Spending-Guard/actions/runs/32423006746/artifacts/9426425978)
+- [Postman 보고서](https://github.com/Joajy/Spending-Guard/actions/runs/32423006746/artifacts/9426395254)
 
 Artifact는 보존 기간이 지나면 내려받을 수 없으므로 실행 결과 링크와 핵심 수치를 함께 남긴다.
 
@@ -85,7 +85,7 @@ Artifact는 보존 기간이 지나면 내려받을 수 없으므로 실행 결�
 | 백엔드 테스트 | 84/84 통과 |
 | 테스트 실패·오류·건너뜀 | 0/0/0 |
 | 라인 커버리지 | 92.74% |
-| 브랜치 커버리지 | 78.18% |
+| 브랜치 커버리지 | 78.57% |
 | Postman 요청 | 6/6 성공 |
 | Postman assertion | 14/14 통과 |
 | Postman 평균 응답 시간 | 34.67ms |
@@ -101,29 +101,29 @@ Artifact는 보존 기간이 지나면 내려받을 수 없으므로 실행 결�
 
 ### 회원 등록과 비밀번호 보호
 
-기준: `feat/user-registration`, Backend CI #31, 2026-08-20
+기준: `feat/user-registration`, Backend CI #35, 2026-08-21
 
 | 구분 | 결과 |
 |---|---:|
-| 백엔드 테스트 | 92/92 통과 |
+| 백엔드 테스트 | 94/94 통과 |
 | 테스트 실패·오류·건너뜀 | 0/0/0 |
-| 라인 커버리지 | 93.26% |
-| 브랜치 커버리지 | 78.18% |
+| 라인 커버리지 | 93.29% |
+| 브랜치 커버리지 | 78.57% |
 | Postman 요청 | 9/9 성공 |
 | Postman assertion | 22/22 통과 |
-| Postman 평균 응답 시간 | 103.78ms |
+| Postman 평균 응답 시간 | 84.89ms |
 | 동일 이메일 동시 등록 | 성공 1건, 중복 7건 |
 | 최종 계정 저장 | 1건 |
 
 다음 보안·정합성 경계를 검증했다.
 
-- 이메일 공백과 대소문자를 정규화해 동일 계정으로 판정한다.
+- API 검증 전에 이메일 앞뒤 공백을 제거하고, 서비스에서 대소문자를 정규화해 동일 계정으로 판정한다.
 - 평문 비밀번호 대신 BCrypt work factor 12 해시만 PostgreSQL에 저장한다.
 - API 응답에는 비밀번호와 비밀번호 해시를 포함하지 않는다.
 - PostgreSQL 고유 제약을 최종 기준으로 사용해 8개 동시 등록 중 한 건만 저장한다.
 - 잘못된 비밀번호 길이는 400, 중복 이메일은 409 Problem Details로 구분한다.
 
-증빙: [GitHub Actions 실행 결과](https://github.com/Joajy/Spending-Guard/actions/runs/32380613858)
+증빙: [GitHub Actions 실행 결과](https://github.com/Joajy/Spending-Guard/actions/runs/32423006746)
 
 ## 수치 해석 기준
 
