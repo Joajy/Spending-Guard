@@ -17,7 +17,7 @@
           "listen": "prerequest",
           "script": {
             "exec": [
-              "pm.collectionVariables.set('registrationEmail', `user-${pm.variables.replaceIn('{{$guid}}')}@example.com`);"
+              "pm.collectionVariables.set('registrationEmail', `User-${pm.variables.replaceIn('{{$guid}}')}@Example.COM`);"
             ]
           }
         },
@@ -26,7 +26,7 @@
           "script": {
             "exec": [
               "pm.test('201 Created', () => pm.response.to.have.status(201));",
-              "pm.test('정규화된 이메일을 반환한다', () => pm.expect(pm.response.json().email).to.eql(pm.collectionVariables.get('registrationEmail')));",
+              "pm.test('정규화된 이메일을 반환한다', () => pm.expect(pm.response.json().email).to.eql(pm.collectionVariables.get('registrationEmail').toLowerCase()));",
               "pm.test('사용자 Location을 반환한다', () => pm.expect(pm.response.headers.get('Location')).to.include('/api/v1/users/'));",
               "pm.test('비밀번호를 응답하지 않는다', () => pm.expect(pm.response.json()).not.to.have.any.keys('password', 'passwordHash'));"
             ]
@@ -43,7 +43,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"email\": \"{{registrationEmail}}\",\n  \"password\": \"sample-password-123\"\n}"
+          "raw": "{\n  \"email\": \"  {{registrationEmail}}  \",\n  \"password\": \"sample-password-123\"\n}"
         },
         "url": "{{baseUrl}}/api/v1/users"
       }
