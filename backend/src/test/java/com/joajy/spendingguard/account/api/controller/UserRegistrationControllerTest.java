@@ -82,6 +82,22 @@ class UserRegistrationControllerTest {
     }
 
     @Test
+    void rejectsMissingEmail() throws Exception {
+        mockMvc.perform(post("/api/v1/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "password": "safe-password-123"
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.title").value("Invalid request"))
+                .andExpect(jsonPath("$.detail").value(org.hamcrest.Matchers.startsWith("email:")));
+
+        verifyNoInteractions(registerUserUseCase);
+    }
+
+    @Test
     void rejectsShortPassword() throws Exception {
         mockMvc.perform(post("/api/v1/users")
                         .contentType(MediaType.APPLICATION_JSON)
