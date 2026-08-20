@@ -4,26 +4,27 @@
 
 ## 최신 검증 결과
 
-기준: `feat/spend-event-status-query`, Backend CI #28, 2026-08-18
+기준: `feat/user-registration`, Backend CI #35, 2026-08-21
 
 | 구분 | 결과 | 측정 범위 |
 |---|---:|---|
-| 백엔드 테스트 | 84/84 통과 | 단위·Web MVC·PostgreSQL 통합·Kafka 종단 테스트 |
+| 백엔드 테스트 | 94/94 통과 | 단위·Web MVC·PostgreSQL 동시성·Kafka 종단 테스트 |
 | 테스트 실패·오류·건너뜀 | 0/0/0 | Gradle 전체 테스트 결과 |
-| 라인 커버리지 | 92.74% | JaCoCo 대상 애플리케이션 코드 |
-| 브랜치 커버리지 | 78.18% | JaCoCo 대상 애플리케이션 코드 |
+| 라인 커버리지 | 93.29% | JaCoCo 대상 애플리케이션 코드 |
+| 브랜치 커버리지 | 78.57% | JaCoCo 대상 애플리케이션 코드 |
 | 빠른 파서 정답률 | 25/25, 100.00% | 저장소에 고정한 회귀 데이터셋 |
-| Postman 요청 | 6/6 성공 | 상태 확인·접수·조회·중복 시나리오 |
-| Postman assertion | 14/14 통과 | 상태 코드·응답 계약 검증 |
-| Postman 평균 응답 시간 | 34.67ms | GitHub Actions 전체 API 회귀 실행 |
+| Postman 요청 | 9/9 성공 | 회원 등록·상태 확인·소비 이벤트 시나리오 |
+| Postman assertion | 22/22 통과 | 상태 코드·응답 계약·민감정보 비노출 검증 |
+| Postman 평균 응답 시간 | 84.89ms | BCrypt 회원 등록을 포함한 전체 API 회귀 실행 |
+| 동시 이메일 등록 | 최초 등록 1건, 중복 판정 7건 | 동일 이메일을 8개 스레드에서 저장 |
 | 중복 이벤트 동시 처리 | 최초 처리 1건, 중복 판정 7건 | 동일 이벤트를 8개 스레드에서 처리 |
 | 중복 업무 쓰기 | 0건 | PostgreSQL 고유 제약과 원자적 선점 검증 |
 
 증빙:
 
-- [GitHub Actions 실행 결과](https://github.com/Joajy/Spending-Guard/actions/runs/32141291250)
-- [백엔드 테스트·JaCoCo 보고서](https://github.com/Joajy/Spending-Guard/actions/runs/32141291250/artifacts/9326041906)
-- [Postman 보고서](https://github.com/Joajy/Spending-Guard/actions/runs/32141291250/artifacts/9326005188)
+- [GitHub Actions 실행 결과](https://github.com/Joajy/Spending-Guard/actions/runs/32423006746)
+- [백엔드 테스트·JaCoCo 보고서](https://github.com/Joajy/Spending-Guard/actions/runs/32423006746/artifacts/9426425978)
+- [Postman 보고서](https://github.com/Joajy/Spending-Guard/actions/runs/32423006746/artifacts/9426395254)
 
 Artifact는 보존 기간이 지나면 내려받을 수 없으므로 실행 결과 링크와 핵심 수치를 함께 남긴다.
 
@@ -84,7 +85,7 @@ Artifact는 보존 기간이 지나면 내려받을 수 없으므로 실행 결�
 | 백엔드 테스트 | 84/84 통과 |
 | 테스트 실패·오류·건너뜀 | 0/0/0 |
 | 라인 커버리지 | 92.74% |
-| 브랜치 커버리지 | 78.18% |
+| 브랜치 커버리지 | 78.57% |
 | Postman 요청 | 6/6 성공 |
 | Postman assertion | 14/14 통과 |
 | Postman 평균 응답 시간 | 34.67ms |
@@ -98,10 +99,37 @@ Artifact는 보존 기간이 지나면 내려받을 수 없으므로 실행 결�
 
 증빙: [GitHub Actions 실행 결과](https://github.com/Joajy/Spending-Guard/actions/runs/32141291250)
 
+### 회원 등록과 비밀번호 보호
+
+기준: `feat/user-registration`, Backend CI #35, 2026-08-21
+
+| 구분 | 결과 |
+|---|---:|
+| 백엔드 테스트 | 94/94 통과 |
+| 테스트 실패·오류·건너뜀 | 0/0/0 |
+| 라인 커버리지 | 93.29% |
+| 브랜치 커버리지 | 78.57% |
+| Postman 요청 | 9/9 성공 |
+| Postman assertion | 22/22 통과 |
+| Postman 평균 응답 시간 | 84.89ms |
+| 동일 이메일 동시 등록 | 성공 1건, 중복 7건 |
+| 최종 계정 저장 | 1건 |
+
+다음 보안·정합성 경계를 검증했다.
+
+- API 검증 전에 이메일 앞뒤 공백을 제거하고, 서비스에서 대소문자를 정규화해 동일 계정으로 판정한다.
+- 평문 비밀번호 대신 BCrypt work factor 12 해시만 PostgreSQL에 저장한다.
+- API 응답에는 비밀번호와 비밀번호 해시를 포함하지 않는다.
+- PostgreSQL 고유 제약을 최종 기준으로 사용해 8개 동시 등록 중 한 건만 저장한다.
+- 잘못된 비밀번호 길이는 400, 중복 이메일은 409 Problem Details로 구분한다.
+
+증빙: [GitHub Actions 실행 결과](https://github.com/Joajy/Spending-Guard/actions/runs/32423006746)
+
 ## 수치 해석 기준
 
 - `100% 파서 정답률`은 고정된 25건의 회귀 데이터셋에 대한 결과다. 금융 알림 전체나 운영 환경의 일반 정확도를 의미하지 않는다.
 - Postman 평균 응답 시간은 공유 CI 환경의 단일 실행값이다. 부하 성능이나 SLA 수치로 사용하지 않는다.
+- 회원 등록이 포함된 실행은 BCrypt 비용 때문에 이전 조회 중심 실행과 조건이 다르므로 평균 응답 시간을 직접 비교하지 않는다.
 - 코드 커버리지는 실행된 코드 비율이다. 결함이 없다는 의미로 해석하지 않는다.
 - 동시성 결과는 8개 스레드 조건의 정합성 검증이다. 처리량이나 최대 동시 사용자 수를 의미하지 않는다.
 - 기능이 추가될 때마다 같은 조건의 최신 수치와 실행 링크를 덧붙인다. 이전 결과는 추세 비교를 위해 삭제하지 않는다.
@@ -111,9 +139,10 @@ Artifact는 보존 기간이 지나면 내려받을 수 없으므로 실행 결�
 - Testcontainers 기반 PostgreSQL과 Embedded Kafka를 사용하는 자동 검증 환경을 구성했다.
 - Kafka 중복 전달 상황에서 데이터베이스 고유 제약과 원자적 INSERT를 이용해 중복 업무 쓰기 0건을 확인했다.
 - 8개 스레드의 동시 재전달에서 최초 처리 1건과 중복 판정 7건으로 일관된 결과를 확인했다.
-- 현재 회귀 범위에서 백엔드 테스트 84건과 Postman assertion 14건을 모두 통과했다.
+- 현재 회귀 범위에서 백엔드 테스트 92건과 Postman assertion 22건을 모두 통과했다.
+- 같은 이메일의 8개 동시 등록에서 계정 1건만 저장되고 나머지 7건은 중복으로 처리됐다.
+- 회원 비밀번호를 BCrypt work factor 12로 해시하고 API와 데이터베이스에 평문을 남기지 않는 경계를 검증했다.
 - 접수 후 반환된 이벤트 식별자를 이용해 비동기 상태를 다시 조회하는 API 흐름을 6개 Postman 요청으로 검증했다.
 - 빠른 파서는 공개한 25건의 회귀 데이터셋에서 25건을 정확히 분류했다.
 
 위 문장은 해당 실행 시점의 사실이다. 표본이 확대되면 최신 결과와 조건으로 갱신한다.
-

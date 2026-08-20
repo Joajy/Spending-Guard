@@ -28,6 +28,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.flywaydb:flyway-core'
     implementation 'org.springframework.kafka:spring-kafka'
+    implementation 'org.springframework.security:spring-security-crypto'
     runtimeOnly 'org.flywaydb:flyway-database-postgresql'
     runtimeOnly 'org.postgresql:postgresql'
 
@@ -52,4 +53,3 @@ tasks.named('jacocoTestReport') {
         html.required = true
     }
 }
-
