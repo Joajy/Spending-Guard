@@ -7,6 +7,9 @@ import java.util.UUID;
 import com.joajy.spendingguard.analysis.domain.model.FastParseOutcome;
 import com.joajy.spendingguard.analysis.domain.model.FastParseStatus;
 import com.joajy.spendingguard.analysis.domain.model.TransactionType;
+import com.joajy.spendingguard.analysis.domain.model.SpendRiskAssessment;
+import com.joajy.spendingguard.analysis.domain.model.SpendCategory;
+import com.joajy.spendingguard.analysis.domain.model.RiskLevel;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -37,6 +40,20 @@ public class FastParseResultEntity {
     @Column(name = "review_reason", length = 200)
     private String reviewReason;
 
+    @Enumerated(EnumType.STRING)
+    @Column(length = 30)
+    private SpendCategory category;
+
+    @Column(name = "fixed_cost")
+    private Boolean fixedCost;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "risk_level", length = 20)
+    private RiskLevel riskLevel;
+
+    @Column(name = "risk_reason", length = 100)
+    private String riskReason;
+
     @Column(name = "parser_version", nullable = false, length = 50)
     private String parserVersion;
 
@@ -49,6 +66,7 @@ public class FastParseResultEntity {
     FastParseResultEntity(
             UUID rawEventId,
             FastParseOutcome outcome,
+            SpendRiskAssessment riskAssessment,
             String parserVersion,
             Instant parsedAt
     ) {
@@ -57,6 +75,12 @@ public class FastParseResultEntity {
         this.transactionType = outcome.transactionType();
         this.status = outcome.status();
         this.reviewReason = outcome.reviewReason();
+        if (riskAssessment != null) {
+            this.category = riskAssessment.category();
+            this.fixedCost = riskAssessment.fixedCost();
+            this.riskLevel = riskAssessment.riskLevel();
+            this.riskReason = riskAssessment.reasonCode();
+        }
         this.parserVersion = parserVersion;
         this.parsedAt = parsedAt;
     }
@@ -79,5 +103,21 @@ public class FastParseResultEntity {
 
     public String getReviewReason() {
         return reviewReason;
+    }
+
+    public SpendCategory getCategory() {
+        return category;
+    }
+
+    public Boolean getFixedCost() {
+        return fixedCost;
+    }
+
+    public RiskLevel getRiskLevel() {
+        return riskLevel;
+    }
+
+    public String getRiskReason() {
+        return riskReason;
     }
 }

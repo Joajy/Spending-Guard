@@ -114,6 +114,10 @@ class SpendEventControllerTest {
                         "PAYMENT",
                         "PARSED",
                         null,
+                        "SHOPPING",
+                        false,
+                        "LOW",
+                        "NORMAL_PATTERN",
                         "fast-parser-v1",
                         Instant.parse("2026-08-13T01:31:00Z")
                 )
@@ -127,7 +131,11 @@ class SpendEventControllerTest {
                 .andExpect(jsonPath("$.fastParse.amount").value(12800))
                 .andExpect(jsonPath("$.fastParse.currency").value("KRW"))
                 .andExpect(jsonPath("$.fastParse.transactionType").value("PAYMENT"))
-                .andExpect(jsonPath("$.fastParse.status").value("PARSED"));
+                .andExpect(jsonPath("$.fastParse.status").value("PARSED"))
+                .andExpect(jsonPath("$.fastParse.category").value("SHOPPING"))
+                .andExpect(jsonPath("$.fastParse.fixedCost").value(false))
+                .andExpect(jsonPath("$.fastParse.riskLevel").value("LOW"))
+                .andExpect(jsonPath("$.fastParse.riskReason").value("NORMAL_PATTERN"));
     }
 
     @Test

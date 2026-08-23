@@ -34,6 +34,10 @@ class SpendEventQueryPersistenceAdapter implements LoadSpendEventDetailPort {
                    parse.transaction_type,
                    parse.status AS parse_status,
                    parse.review_reason,
+                   parse.category,
+                   parse.fixed_cost,
+                   parse.risk_level,
+                   parse.risk_reason,
                    parse.parser_version,
                    parse.parsed_at
               FROM raw_spend_event raw_event
@@ -90,6 +94,10 @@ class SpendEventQueryPersistenceAdapter implements LoadSpendEventDetailPort {
                 resultSet.getString("transaction_type"),
                 parseStatus,
                 resultSet.getString("review_reason"),
+                resultSet.getString("category"),
+                resultSet.getObject("fixed_cost", Boolean.class),
+                resultSet.getString("risk_level"),
+                resultSet.getString("risk_reason"),
                 resultSet.getString("parser_version"),
                 instant(resultSet, "parsed_at")
         );

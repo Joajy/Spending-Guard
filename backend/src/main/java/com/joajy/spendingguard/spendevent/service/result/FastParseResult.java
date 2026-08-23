@@ -9,8 +9,11 @@ public record FastParseResult(
         String transactionType,
         String status,
         String reviewReason,
+        String category,
+        Boolean fixedCost,
+        String riskLevel,
+        String riskReason,
         String parserVersion,
         Instant parsedAt
 ) {
 }
-

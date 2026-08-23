@@ -17,6 +17,10 @@ public record FastParseResultResponse(
         String transactionType,
         String status,
         String reviewReason,
+        String category,
+        Boolean fixedCost,
+        String riskLevel,
+        String riskReason,
         String parserVersion,
         Instant parsedAt
 ) {
@@ -31,9 +35,12 @@ public record FastParseResultResponse(
                 result.transactionType(),
                 result.status(),
                 result.reviewReason(),
+                result.category(),
+                result.fixedCost(),
+                result.riskLevel(),
+                result.riskReason(),
                 result.parserVersion(),
                 result.parsedAt()
         );
     }
 }
-
