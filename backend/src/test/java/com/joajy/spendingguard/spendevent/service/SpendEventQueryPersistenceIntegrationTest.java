@@ -3,11 +3,11 @@ package com.joajy.spendingguard.spendevent.service;
 import java.time.Instant;
 import java.util.UUID;
 
-import com.joajy.spendingguard.analysis.application.command.ProcessSpendEventCommand;
-import com.joajy.spendingguard.analysis.application.service.SpendEventProcessingService;
-import com.joajy.spendingguard.analysis.infrastructure.persistence.FastParseResultJpaRepository;
-import com.joajy.spendingguard.analysis.infrastructure.persistence.ProcessedEventJpaRepository;
-import com.joajy.spendingguard.outbox.infrastructure.persistence.OutboxEventJpaRepository;
+import com.joajy.spendingguard.analysis.service.command.ProcessSpendEventCommand;
+import com.joajy.spendingguard.analysis.service.SpendEventProcessingService;
+import com.joajy.spendingguard.analysis.repository.FastParseResultJpaRepository;
+import com.joajy.spendingguard.analysis.repository.ProcessedEventJpaRepository;
+import com.joajy.spendingguard.outbox.repository.OutboxEventJpaRepository;
 import com.joajy.spendingguard.spendevent.service.command.SubmitSpendEventCommand;
 import com.joajy.spendingguard.spendevent.service.exception.SpendEventNotFoundException;
 import com.joajy.spendingguard.spendevent.service.result.SpendEventDetail;

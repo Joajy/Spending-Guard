@@ -19,12 +19,12 @@ class PackageDependencyRulesTest {
     void domainDoesNotDependOnOuterLayers() {
         noClasses().that().resideInAPackage("..domain..")
                 .should().dependOnClassesThat().resideInAnyPackage(
-                        "..api..",
-                        "..application..",
-                        "..infrastructure..",
                         "..controller..",
                         "..service..",
-                        "..repository.."
+                        "..repository..",
+                        "..messaging..",
+                        "..scheduling..",
+                        "..config.."
                 )
                 .check(CLASSES);
     }
@@ -44,23 +44,16 @@ class PackageDependencyRulesTest {
     }
 
     @Test
-    void applicationDoesNotDependOnApiOrInfrastructure() {
-        noClasses().that().resideInAPackage("..application..")
-                .should().dependOnClassesThat().resideInAnyPackage("..api..", "..infrastructure..")
-                .check(CLASSES);
-    }
-
-    @Test
-    void persistenceEntitiesStayInInfrastructure() {
+    void persistenceEntitiesStayInRepositoryPackages() {
         classes().that().areAnnotatedWith(Entity.class)
-                .should().resideInAnyPackage("..infrastructure.persistence..", "..repository..")
+                .should().resideInAPackage("..repository..")
                 .check(CLASSES);
     }
 
     @Test
-    void adaptersStayInInfrastructure() {
+    void adaptersStayInRepositoryPackages() {
         classes().that().haveSimpleNameEndingWith("Adapter")
-                .should().resideInAnyPackage("..infrastructure..", "..repository..")
+                .should().resideInAPackage("..repository..")
                 .check(CLASSES);
     }
 }

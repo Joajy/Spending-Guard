@@ -2,10 +2,10 @@ package com.joajy.spendingguard.spendevent.repository;
 
 import java.util.UUID;
 
-import com.joajy.spendingguard.analysis.application.exception.SpendEventNotFoundException;
-import com.joajy.spendingguard.analysis.application.model.SpendEventAnalysisTarget;
-import com.joajy.spendingguard.analysis.application.port.outbound.LoadSpendEventForAnalysisPort;
-import com.joajy.spendingguard.analysis.application.port.outbound.UpdateSpendEventStatusPort;
+import com.joajy.spendingguard.analysis.service.exception.SpendEventNotFoundException;
+import com.joajy.spendingguard.analysis.service.model.SpendEventAnalysisTarget;
+import com.joajy.spendingguard.analysis.service.port.outbound.LoadSpendEventForAnalysisPort;
+import com.joajy.spendingguard.analysis.service.port.outbound.UpdateSpendEventStatusPort;
 import com.joajy.spendingguard.spendevent.domain.model.SpendEventStatus;
 import org.springframework.stereotype.Component;
 

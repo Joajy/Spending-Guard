@@ -8,8 +8,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import com.joajy.spendingguard.outbox.infrastructure.persistence.OutboxEventEntity;
-import com.joajy.spendingguard.outbox.infrastructure.persistence.OutboxEventJpaRepository;
+import com.joajy.spendingguard.outbox.repository.OutboxEventEntity;
+import com.joajy.spendingguard.outbox.repository.OutboxEventJpaRepository;
 import com.joajy.spendingguard.spendevent.service.command.SubmitSpendEventCommand;
 import com.joajy.spendingguard.spendevent.service.exception.DuplicateSpendEventException;
 import com.joajy.spendingguard.spendevent.service.result.SpendEventReceipt;
