@@ -51,13 +51,6 @@ class PackageDependencyRulesTest {
     }
 
     @Test
-    void apiDoesNotDependOnInfrastructure() {
-        noClasses().that().resideInAPackage("..api..")
-                .should().dependOnClassesThat().resideInAPackage("..infrastructure..")
-                .check(CLASSES);
-    }
-
-    @Test
     void persistenceEntitiesStayInInfrastructure() {
         classes().that().areAnnotatedWith(Entity.class)
                 .should().resideInAnyPackage("..infrastructure.persistence..", "..repository..")

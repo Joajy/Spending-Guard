@@ -4,7 +4,7 @@ import java.util.Map;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.joajy.spendingguard.spendevent.application.port.outbound.AppendSpendEventOutboxPort;
+import com.joajy.spendingguard.spendevent.service.port.outbound.AppendSpendEventOutboxPort;
 import com.joajy.spendingguard.spendevent.domain.event.SpendEventReceived;
 import org.springframework.stereotype.Component;
 
