@@ -7,6 +7,10 @@
     {
       "key": "baseUrl",
       "value": "http://localhost:8080"
+    },
+    {
+      "key": "mailpitUrl",
+      "value": "http://localhost:8025"
     }
   ],
   "item": [
@@ -25,6 +29,7 @@
           "listen": "test",
           "script": {
             "exec": [
+              "pm.collectionVariables.set('userId', pm.response.json().userId);",
               "pm.test('201 Created', () => pm.response.to.have.status(201));",
               "pm.test('정규화된 이메일을 반환한다', () => pm.expect(pm.response.json().email).to.eql(pm.collectionVariables.get('registrationEmail').toLowerCase()));",
               "pm.test('사용자 Location을 반환한다', () => pm.expect(pm.response.headers.get('Location')).to.include('/api/v1/users/'));",
@@ -47,6 +52,46 @@
         },
         "url": "{{baseUrl}}/api/v1/users"
       }
+    },
+    {
+      "name": "이메일 인증번호 발급",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/v1/users/{{userId}}/email-verification"
+      },
+      "event": [{
+        "listen": "test",
+        "script": {"exec": ["pm.test('202 Accepted', () => pm.response.to.have.status(202));"]}
+      }]
+    },
+    {
+      "name": "인증 메일 확인",
+      "request": {
+        "method": "GET",
+        "url": "{{mailpitUrl}}/view/latest.txt?query=to:{{registrationEmail}}"
+      },
+      "event": [{
+        "listen": "test",
+        "script": {"exec": [
+          "pm.test('메일이 도착한다', () => pm.response.to.have.status(200));",
+          "const match = pm.response.text().match(/\\b(\\d{6})\\b/);",
+          "pm.test('6자리 인증번호가 포함된다', () => pm.expect(match).not.to.eql(null));",
+          "pm.collectionVariables.set('verificationCode', match[1]);"
+        ]}
+      }]
+    },
+    {
+      "name": "이메일 인증 완료",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {"mode": "raw", "raw": "{\n  \"code\": \"{{verificationCode}}\"\n}"},
+        "url": "{{baseUrl}}/api/v1/users/{{userId}}/email-verification/confirmation"
+      },
+      "event": [{
+        "listen": "test",
+        "script": {"exec": ["pm.test('204 No Content', () => pm.response.to.have.status(204));"]}
+      }]
     },
     {
       "name": "회원 등록 - 이메일 중복",
