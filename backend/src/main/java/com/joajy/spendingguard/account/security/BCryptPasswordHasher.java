@@ -1,6 +1,7 @@
 package com.joajy.spendingguard.account.security;
 
 import com.joajy.spendingguard.account.service.port.outbound.HashPasswordPort;
+import com.joajy.spendingguard.account.service.port.outbound.VerifyPasswordPort;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 
@@ -11,12 +12,17 @@ import org.springframework.stereotype.Component;
  * 로그인 기능은 후속 작업에서 BCrypt의 {@code matches} 연산을 별도 포트로 노출한다.
  */
 @Component
-class BCryptPasswordHasher implements HashPasswordPort {
+class BCryptPasswordHasher implements HashPasswordPort, VerifyPasswordPort {
 
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
 
     @Override
     public String hash(String rawPassword) {
         return encoder.encode(rawPassword);
+    }
+
+    @Override
+    public boolean matches(String rawPassword, String passwordHash) {
+        return encoder.matches(rawPassword, passwordHash);
     }
 }

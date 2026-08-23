@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @RequestMapping("/api/v1/users/{userId}/dashboard")
@@ -23,6 +24,7 @@ public class MonthlyDashboardController {
     }
 
     @GetMapping
+    @PreAuthorize("@userScope.matches(authentication, #userId)")
     public MonthlyDashboard get(
             @PathVariable UUID userId,
             @RequestParam String month

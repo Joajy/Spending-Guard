@@ -11,6 +11,8 @@ import org.springframework.data.repository.query.Param;
 
 /** 사용자 계정 엔티티의 기본 저장과 식별자 조회를 제공한다. */
 public interface UserAccountJpaRepository extends JpaRepository<UserAccountEntity, UUID> {
+    Optional<UserAccountEntity> findByEmail(String email);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select account from UserAccountEntity account where account.id = :id")
     Optional<UserAccountEntity> findByIdForUpdate(@Param("id") UUID id);
