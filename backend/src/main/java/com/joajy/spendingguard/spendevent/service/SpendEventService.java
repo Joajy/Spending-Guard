@@ -7,7 +7,9 @@ import java.util.UUID;
 import com.joajy.spendingguard.spendevent.service.command.SubmitSpendEventCommand;
 import com.joajy.spendingguard.spendevent.service.port.inbound.SubmitSpendEventUseCase;
 import com.joajy.spendingguard.spendevent.service.port.outbound.AppendSpendEventOutboxPort;
+import com.joajy.spendingguard.spendevent.service.port.outbound.CheckSpendEventOwnerPort;
 import com.joajy.spendingguard.spendevent.service.port.outbound.StoreRawSpendEventPort;
+import com.joajy.spendingguard.spendevent.service.exception.SpendEventOwnerNotFoundException;
 import com.joajy.spendingguard.spendevent.service.result.SpendEventReceipt;
 import com.joajy.spendingguard.spendevent.domain.event.SpendEventReceived;
 import com.joajy.spendingguard.spendevent.domain.model.RawSpendEvent;
@@ -37,6 +39,7 @@ import org.springframework.util.StringUtils;
 public class SpendEventService implements SubmitSpendEventUseCase {
 
     private final StoreRawSpendEventPort storeRawSpendEventPort;
+    private final CheckSpendEventOwnerPort checkSpendEventOwnerPort;
     private final AppendSpendEventOutboxPort appendSpendEventOutboxPort;
     private final MessageSanitizer messageSanitizer;
     private final DeduplicationKeyGenerator deduplicationKeyGenerator;
@@ -44,12 +47,14 @@ public class SpendEventService implements SubmitSpendEventUseCase {
 
     public SpendEventService(
             StoreRawSpendEventPort storeRawSpendEventPort,
+            CheckSpendEventOwnerPort checkSpendEventOwnerPort,
             AppendSpendEventOutboxPort appendSpendEventOutboxPort,
             MessageSanitizer messageSanitizer,
             DeduplicationKeyGenerator deduplicationKeyGenerator,
             Clock clock
     ) {
         this.storeRawSpendEventPort = storeRawSpendEventPort;
+        this.checkSpendEventOwnerPort = checkSpendEventOwnerPort;
         this.appendSpendEventOutboxPort = appendSpendEventOutboxPort;
         this.messageSanitizer = messageSanitizer;
         this.deduplicationKeyGenerator = deduplicationKeyGenerator;
@@ -59,6 +64,9 @@ public class SpendEventService implements SubmitSpendEventUseCase {
     @Override
     @Transactional
     public SpendEventReceipt submit(SubmitSpendEventCommand command) {
+        if (command.userId() != null && !checkSpendEventOwnerPort.exists(command.userId())) {
+            throw new SpendEventOwnerNotFoundException();
+        }
         UUID eventId = UUID.randomUUID();
         Instant receivedAt = clock.instant();
         String externalEventId = normalizeExternalEventId(command.externalEventId());
@@ -71,6 +79,7 @@ public class SpendEventService implements SubmitSpendEventUseCase {
 
         RawSpendEvent spendEvent = new RawSpendEvent(
                 eventId,
+                command.userId(),
                 command.source(),
                 externalEventId,
                 deduplicationKey,
@@ -83,6 +92,7 @@ public class SpendEventService implements SubmitSpendEventUseCase {
         storeRawSpendEventPort.store(spendEvent);
         appendSpendEventOutboxPort.append(new SpendEventReceived(
                 eventId,
+                command.userId(),
                 command.source(),
                 receivedAt
         ));

@@ -271,7 +271,7 @@
           "mode": "raw",
           "raw": "{\n  \"source\": \"SIMULATOR\",\n  \"externalEventId\": \"{{$guid}}\",\n  \"message\": \"테스트상점 12,800원 결제\",\n  \"occurredAt\": \"2026-08-13T01:00:00Z\"\n}"
         },
-        "url": "{{baseUrl}}/api/v1/spend-events"
+        "url": "{{baseUrl}}/api/v1/users/{{userId}}/spend-events"
       },
       "event": [
         {
@@ -291,7 +291,7 @@
       "name": "소비 이벤트 처리 상태 조회",
       "request": {
         "method": "GET",
-        "url": "{{baseUrl}}/api/v1/spend-events/{{spendEventId}}"
+        "url": "{{baseUrl}}/api/v1/users/{{userId}}/spend-events/{{spendEventId}}"
       },
       "event": [
         {
@@ -311,7 +311,7 @@
       "name": "존재하지 않는 소비 이벤트 조회",
       "request": {
         "method": "GET",
-        "url": "{{baseUrl}}/api/v1/spend-events/{{$guid}}"
+        "url": "{{baseUrl}}/api/v1/users/{{userId}}/spend-events/{{$guid}}"
       },
       "event": [
         {
@@ -357,7 +357,7 @@
           "mode": "raw",
           "raw": "{\n  \"source\": \"SIMULATOR\",\n  \"externalEventId\": \"{{duplicateEventId}}\",\n  \"message\": \"테스트택시 18,000원 결제\"\n}"
         },
-        "url": "{{baseUrl}}/api/v1/spend-events"
+        "url": "{{baseUrl}}/api/v1/users/{{userId}}/spend-events"
       }
     },
     {
@@ -374,7 +374,7 @@
           "mode": "raw",
           "raw": "{\n  \"source\": \"SIMULATOR\",\n  \"externalEventId\": \"{{duplicateEventId}}\",\n  \"message\": \"테스트택시 18,000원 결제\"\n}"
         },
-        "url": "{{baseUrl}}/api/v1/spend-events"
+        "url": "{{baseUrl}}/api/v1/users/{{userId}}/spend-events"
       },
       "event": [
         {

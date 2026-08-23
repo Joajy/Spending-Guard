@@ -24,7 +24,7 @@ import org.springframework.stereotype.Component;
 @Component
 class SpendEventQueryPersistenceAdapter implements LoadSpendEventDetailPort {
 
-    private static final String FIND_BY_ID = """
+    private static final String FIND_BY_USER_AND_ID = """
             SELECT raw_event.id AS event_id,
                    raw_event.source,
                    raw_event.status AS event_status,
@@ -38,7 +38,8 @@ class SpendEventQueryPersistenceAdapter implements LoadSpendEventDetailPort {
                    parse.parsed_at
               FROM raw_spend_event raw_event
               LEFT JOIN fast_parse_result parse ON parse.raw_event_id = raw_event.id
-             WHERE raw_event.id = :eventId
+             WHERE raw_event.user_id = :userId
+               AND raw_event.id = :eventId
             """;
 
     private final JdbcClient jdbcClient;
@@ -48,8 +49,17 @@ class SpendEventQueryPersistenceAdapter implements LoadSpendEventDetailPort {
     }
 
     @Override
+    public Optional<SpendEventDetail> findByUserIdAndId(UUID userId, UUID eventId) {
+        return jdbcClient.sql(FIND_BY_USER_AND_ID)
+                .param("userId", userId)
+                .param("eventId", eventId)
+                .query(this::map)
+                .optional();
+    }
+
+    @Override
     public Optional<SpendEventDetail> findById(UUID eventId) {
-        return jdbcClient.sql(FIND_BY_ID)
+        return jdbcClient.sql(FIND_BY_USER_AND_ID.replace("raw_event.user_id = :userId\n               AND ", ""))
                 .param("eventId", eventId)
                 .query(this::map)
                 .optional();
@@ -86,4 +96,3 @@ class SpendEventQueryPersistenceAdapter implements LoadSpendEventDetailPort {
         return value == null ? null : value.toInstant();
     }
 }
-

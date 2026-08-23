@@ -30,7 +30,7 @@ import org.springframework.web.util.UriComponentsBuilder;
  * URI를 제공한다.
  */
 @RestController
-@RequestMapping("/api/v1/spend-events")
+@RequestMapping("/api/v1/users/{userId}/spend-events")
 public class SpendEventController {
 
     private final SubmitSpendEventUseCase submitSpendEventUseCase;
@@ -53,13 +53,14 @@ public class SpendEventController {
      */
     @PostMapping
     public ResponseEntity<SpendEventAcceptedResponse> submit(
+            @PathVariable UUID userId,
             @Valid @RequestBody SubmitSpendEventRequest request,
             UriComponentsBuilder uriBuilder
     ) {
-        SpendEventReceipt receipt = submitSpendEventUseCase.submit(request.toCommand());
+        SpendEventReceipt receipt = submitSpendEventUseCase.submit(request.toCommand(userId));
         SpendEventAcceptedResponse response = SpendEventAcceptedResponse.from(receipt);
-        URI location = uriBuilder.path("/api/v1/spend-events/{eventId}")
-                .build(response.eventId());
+        URI location = uriBuilder.path("/api/v1/users/{userId}/spend-events/{eventId}")
+                .build(userId, response.eventId());
         return ResponseEntity.accepted().location(location).body(response);
     }
 
@@ -70,8 +71,7 @@ public class SpendEventController {
      * @return 조회 시점의 상태와, 분석이 시작된 경우 빠른 파싱 결과
      */
     @GetMapping("/{eventId}")
-    public SpendEventDetailResponse get(@PathVariable UUID eventId) {
-        return SpendEventDetailResponse.from(getSpendEventUseCase.get(eventId));
+    public SpendEventDetailResponse get(@PathVariable UUID userId, @PathVariable UUID eventId) {
+        return SpendEventDetailResponse.from(getSpendEventUseCase.get(userId, eventId));
     }
 }
-

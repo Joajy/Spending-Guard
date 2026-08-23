@@ -26,9 +26,13 @@ public class SpendEventQueryService implements GetSpendEventUseCase {
 
     @Override
     @Transactional(readOnly = true)
+    public SpendEventDetail get(UUID userId, UUID eventId) {
+        return loadSpendEventDetailPort.findByUserIdAndId(userId, eventId)
+                .orElseThrow(() -> new SpendEventNotFoundException(eventId));
+    }
+
     public SpendEventDetail get(UUID eventId) {
         return loadSpendEventDetailPort.findById(eventId)
                 .orElseThrow(() -> new SpendEventNotFoundException(eventId));
     }
 }
-

@@ -1,6 +1,7 @@
 package com.joajy.spendingguard.spendevent.service.command;
 
 import java.time.Instant;
+import java.util.UUID;
 
 import com.joajy.spendingguard.spendevent.domain.model.SpendEventSource;
 
@@ -16,9 +17,13 @@ import com.joajy.spendingguard.spendevent.domain.model.SpendEventSource;
  * @param occurredAt 외부 채널 기준 발생 시각, 알 수 없으면 {@code null}
  */
 public record SubmitSpendEventCommand(
+        UUID userId,
         SpendEventSource source,
         String externalEventId,
         String message,
         Instant occurredAt
 ) {
+    public SubmitSpendEventCommand(SpendEventSource source, String externalEventId, String message, Instant occurredAt) {
+        this(null, source, externalEventId, message, occurredAt);
+    }
 }
