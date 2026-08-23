@@ -17,6 +17,7 @@ import com.joajy.spendingguard.spendevent.domain.model.SpendEventSource;
  */
 public record SpendEventReceived(
         UUID eventId,
+        UUID userId,
         SpendEventSource source,
         Instant receivedAt
 ) {

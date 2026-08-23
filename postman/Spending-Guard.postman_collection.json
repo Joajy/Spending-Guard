@@ -271,7 +271,7 @@
           "mode": "raw",
           "raw": "{\n  \"source\": \"SIMULATOR\",\n  \"externalEventId\": \"{{$guid}}\",\n  \"message\": \"테스트상점 12,800원 결제\",\n  \"occurredAt\": \"2026-08-13T01:00:00Z\"\n}"
         },
-        "url": "{{baseUrl}}/api/v1/spend-events"
+        "url": "{{baseUrl}}/api/v1/users/{{userId}}/spend-events"
       },
       "event": [
         {
@@ -281,7 +281,7 @@
               "pm.collectionVariables.set('spendEventId', pm.response.json().eventId);",
               "pm.test('202 Accepted', () => pm.response.to.have.status(202));",
               "pm.test('RECEIVED 상태로 접수된다', () => pm.expect(pm.response.json().status).to.eql('RECEIVED'));",
-              "pm.test('조회 경로가 Location에 포함된다', () => pm.expect(pm.response.headers.get('Location')).to.include('/api/v1/spend-events/'));"
+              "pm.test('조회 경로가 Location에 포함된다', () => pm.expect(pm.response.headers.get('Location')).to.include('/api/v1/users/' + pm.collectionVariables.get('userId') + '/spend-events/'));"
             ]
           }
         }
@@ -291,7 +291,7 @@
       "name": "소비 이벤트 처리 상태 조회",
       "request": {
         "method": "GET",
-        "url": "{{baseUrl}}/api/v1/spend-events/{{spendEventId}}"
+        "url": "{{baseUrl}}/api/v1/users/{{userId}}/spend-events/{{spendEventId}}"
       },
       "event": [
         {
@@ -311,7 +311,7 @@
       "name": "존재하지 않는 소비 이벤트 조회",
       "request": {
         "method": "GET",
-        "url": "{{baseUrl}}/api/v1/spend-events/{{$guid}}"
+        "url": "{{baseUrl}}/api/v1/users/{{userId}}/spend-events/{{$guid}}"
       },
       "event": [
         {
@@ -357,7 +357,7 @@
           "mode": "raw",
           "raw": "{\n  \"source\": \"SIMULATOR\",\n  \"externalEventId\": \"{{duplicateEventId}}\",\n  \"message\": \"테스트택시 18,000원 결제\"\n}"
         },
-        "url": "{{baseUrl}}/api/v1/spend-events"
+        "url": "{{baseUrl}}/api/v1/users/{{userId}}/spend-events"
       }
     },
     {
@@ -374,7 +374,7 @@
           "mode": "raw",
           "raw": "{\n  \"source\": \"SIMULATOR\",\n  \"externalEventId\": \"{{duplicateEventId}}\",\n  \"message\": \"테스트택시 18,000원 결제\"\n}"
         },
-        "url": "{{baseUrl}}/api/v1/spend-events"
+        "url": "{{baseUrl}}/api/v1/users/{{userId}}/spend-events"
       },
       "event": [
         {

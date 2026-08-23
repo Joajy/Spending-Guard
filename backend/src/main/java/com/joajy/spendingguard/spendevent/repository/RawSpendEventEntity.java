@@ -35,6 +35,9 @@ public class RawSpendEventEntity {
     @Id
     private UUID id;
 
+    @Column(name = "user_id")
+    private UUID userId;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     private SpendEventSource source;
@@ -64,6 +67,7 @@ public class RawSpendEventEntity {
 
     private RawSpendEventEntity(RawSpendEvent spendEvent) {
         this.id = spendEvent.id();
+        this.userId = spendEvent.userId();
         this.source = spendEvent.source();
         this.externalEventId = spendEvent.externalEventId();
         this.deduplicationKey = spendEvent.deduplicationKey();

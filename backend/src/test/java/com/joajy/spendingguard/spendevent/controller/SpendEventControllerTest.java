@@ -31,6 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(SpendEventController.class)
 class SpendEventControllerTest {
+    private static final UUID USER_ID = UUID.fromString("3f6d4218-f5a6-48cf-9813-006779108c0d");
 
     @Autowired
     private MockMvc mockMvc;
@@ -49,7 +50,7 @@ class SpendEventControllerTest {
                 new SpendEventReceipt(eventId, SpendEventStatus.RECEIVED, receivedAt)
         );
 
-        mockMvc.perform(post("/api/v1/spend-events")
+        mockMvc.perform(post("/api/v1/users/{userId}/spend-events", USER_ID)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -59,7 +60,7 @@ class SpendEventControllerTest {
                                 }
                                 """))
                 .andExpect(status().isAccepted())
-                .andExpect(header().string("Location", "http://localhost/api/v1/spend-events/" + eventId))
+                .andExpect(header().string("Location", "http://localhost/api/v1/users/" + USER_ID + "/spend-events/" + eventId))
                 .andExpect(jsonPath("$.eventId").value(eventId.toString()))
                 .andExpect(jsonPath("$.status").value("RECEIVED"))
                 .andExpect(jsonPath("$.receivedAt").value("2026-08-13T01:30:00Z"));
@@ -67,7 +68,7 @@ class SpendEventControllerTest {
 
     @Test
     void rejectsBlankMessage() throws Exception {
-        mockMvc.perform(post("/api/v1/spend-events")
+        mockMvc.perform(post("/api/v1/users/{userId}/spend-events", USER_ID)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -86,7 +87,7 @@ class SpendEventControllerTest {
     void returnsConflictForDuplicateEvent() throws Exception {
         given(submitSpendEventUseCase.submit(any())).willThrow(new DuplicateSpendEventException());
 
-        mockMvc.perform(post("/api/v1/spend-events")
+        mockMvc.perform(post("/api/v1/users/{userId}/spend-events", USER_ID)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -102,7 +103,7 @@ class SpendEventControllerTest {
     @Test
     void returnsCurrentStatusAndFastParseResult() throws Exception {
         UUID eventId = UUID.fromString("9bbd364c-a952-42aa-91cb-f607603aa7d5");
-        given(getSpendEventUseCase.get(eventId)).willReturn(new SpendEventDetail(
+        given(getSpendEventUseCase.get(USER_ID, eventId)).willReturn(new SpendEventDetail(
                 eventId,
                 SpendEventSource.SIMULATOR,
                 SpendEventStatus.ANALYZING,
@@ -118,7 +119,7 @@ class SpendEventControllerTest {
                 )
         ));
 
-        mockMvc.perform(get("/api/v1/spend-events/{eventId}", eventId))
+        mockMvc.perform(get("/api/v1/users/{userId}/spend-events/{eventId}", USER_ID, eventId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.eventId").value(eventId.toString()))
                 .andExpect(jsonPath("$.source").value("SIMULATOR"))
@@ -132,7 +133,7 @@ class SpendEventControllerTest {
     @Test
     void returnsNullFastParseWhileEventIsWaiting() throws Exception {
         UUID eventId = UUID.fromString("80faad82-d492-45f8-8c6b-86069005d24d");
-        given(getSpendEventUseCase.get(eventId)).willReturn(new SpendEventDetail(
+        given(getSpendEventUseCase.get(USER_ID, eventId)).willReturn(new SpendEventDetail(
                 eventId,
                 SpendEventSource.MANUAL_TEXT,
                 SpendEventStatus.RECEIVED,
@@ -141,7 +142,7 @@ class SpendEventControllerTest {
                 null
         ));
 
-        mockMvc.perform(get("/api/v1/spend-events/{eventId}", eventId))
+        mockMvc.perform(get("/api/v1/users/{userId}/spend-events/{eventId}", USER_ID, eventId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("RECEIVED"))
                 .andExpect(jsonPath("$.fastParse").doesNotExist());
@@ -150,9 +151,9 @@ class SpendEventControllerTest {
     @Test
     void returnsNotFoundForUnknownEvent() throws Exception {
         UUID eventId = UUID.fromString("b894a4c7-0c4b-453b-8c82-92bbcd6bd8eb");
-        given(getSpendEventUseCase.get(eventId)).willThrow(new SpendEventNotFoundException(eventId));
+        given(getSpendEventUseCase.get(USER_ID, eventId)).willThrow(new SpendEventNotFoundException(eventId));
 
-        mockMvc.perform(get("/api/v1/spend-events/{eventId}", eventId))
+        mockMvc.perform(get("/api/v1/users/{userId}/spend-events/{eventId}", USER_ID, eventId))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.title").value("Spend event not found"))
                 .andExpect(jsonPath("$.detail").value(org.hamcrest.Matchers.containsString(eventId.toString())));
@@ -160,10 +161,9 @@ class SpendEventControllerTest {
 
     @Test
     void returnsBadRequestForMalformedEventId() throws Exception {
-        mockMvc.perform(get("/api/v1/spend-events/not-a-uuid"))
+        mockMvc.perform(get("/api/v1/users/{userId}/spend-events/not-a-uuid", USER_ID))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.title").value("Invalid request"))
                 .andExpect(jsonPath("$.detail").value("eventId 형식을 확인해 주세요."));
     }
 }
-

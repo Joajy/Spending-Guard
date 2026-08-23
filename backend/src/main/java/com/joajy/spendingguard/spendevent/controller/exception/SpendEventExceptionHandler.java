@@ -3,6 +3,7 @@ package com.joajy.spendingguard.spendevent.controller.exception;
 import com.joajy.spendingguard.spendevent.controller.SpendEventController;
 import com.joajy.spendingguard.spendevent.service.exception.DuplicateSpendEventException;
 import com.joajy.spendingguard.spendevent.service.exception.SpendEventNotFoundException;
+import com.joajy.spendingguard.spendevent.service.exception.SpendEventOwnerNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
@@ -37,6 +38,11 @@ class SpendEventExceptionHandler {
         return problem(HttpStatus.NOT_FOUND, "Spend event not found", exception.getMessage());
     }
 
+    @ExceptionHandler(SpendEventOwnerNotFoundException.class)
+    ResponseEntity<ProblemDetail> ownerNotFound(SpendEventOwnerNotFoundException exception) {
+        return problem(HttpStatus.NOT_FOUND, "Spend event owner not found", exception.getMessage());
+    }
+
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     ResponseEntity<ProblemDetail> handleInvalidPath() {
         return problem(HttpStatus.BAD_REQUEST, "Invalid request", "eventId 형식을 확인해 주세요.");
@@ -64,4 +70,3 @@ class SpendEventExceptionHandler {
                 .body(problem);
     }
 }
-

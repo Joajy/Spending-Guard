@@ -1,6 +1,7 @@
 package com.joajy.spendingguard.spendevent.controller.dto.request;
 
 import java.time.Instant;
+import java.util.UUID;
 
 import com.joajy.spendingguard.spendevent.service.command.SubmitSpendEventCommand;
 import com.joajy.spendingguard.spendevent.domain.model.SpendEventSource;
@@ -31,7 +32,7 @@ public record SubmitSpendEventRequest(
      *
      * @return 같은 입력값을 담은 접수 명령
      */
-    public SubmitSpendEventCommand toCommand() {
-        return new SubmitSpendEventCommand(source, externalEventId, message, occurredAt);
+    public SubmitSpendEventCommand toCommand(UUID userId) {
+        return new SubmitSpendEventCommand(userId, source, externalEventId, message, occurredAt);
     }
 }

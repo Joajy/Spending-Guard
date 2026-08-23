@@ -9,5 +9,8 @@ import com.joajy.spendingguard.spendevent.service.result.SpendEventDetail;
 public interface LoadSpendEventDetailPort {
 
     Optional<SpendEventDetail> findById(UUID eventId);
-}
 
+    default Optional<SpendEventDetail> findByUserIdAndId(UUID userId, UUID eventId) {
+        return Optional.empty();
+    }
+}

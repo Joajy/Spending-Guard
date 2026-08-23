@@ -20,6 +20,7 @@ import java.util.UUID;
  */
 public record RawSpendEvent(
         UUID id,
+        UUID userId,
         SpendEventSource source,
         String externalEventId,
         String deduplicationKey,
