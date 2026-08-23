@@ -2,6 +2,7 @@ package com.joajy.spendingguard.budget.repository;
 
 import java.time.Instant;
 import java.time.YearMonth;
+import java.time.ZoneOffset;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
@@ -48,12 +49,13 @@ class BudgetConsumptionPersistenceIntegrationTest {
         jdbcClient.sql("""
                 INSERT INTO user_account (id, email, password_hash, created_at)
                 VALUES (:id, 'budget@example.com', 'hash', :now)
-                """).param("id", USER_ID).param("now", NOW).update();
+                """).param("id", USER_ID).param("now", NOW.atOffset(ZoneOffset.UTC)).update();
         jdbcClient.sql("""
                 INSERT INTO monthly_budget
                     (id, user_id, budget_month, limit_amount, spent_amount, version, updated_at)
                 VALUES (:id, :userId, '2026-08', 500000, 0, 0, :now)
-                """).param("id", BUDGET_ID).param("userId", USER_ID).param("now", NOW).update();
+                """).param("id", BUDGET_ID).param("userId", USER_ID)
+                .param("now", NOW.atOffset(ZoneOffset.UTC)).update();
     }
 
     @Test
@@ -125,7 +127,7 @@ class BudgetConsumptionPersistenceIntegrationTest {
                 .param("id", eventId)
                 .param("userId", USER_ID)
                 .param("deduplicationKey", deduplicationKey)
-                .param("now", NOW)
+                .param("now", NOW.atOffset(ZoneOffset.UTC))
                 .update();
         return eventId;
     }

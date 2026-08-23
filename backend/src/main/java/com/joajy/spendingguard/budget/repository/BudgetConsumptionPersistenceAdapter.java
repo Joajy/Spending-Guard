@@ -1,6 +1,7 @@
 package com.joajy.spendingguard.budget.repository;
 
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.time.YearMonth;
 import java.util.Map;
 import java.util.UUID;
@@ -47,7 +48,7 @@ class BudgetConsumptionPersistenceAdapter implements ApplyBudgetConsumptionPort 
                 "eventId", eventId,
                 "month", month.toString(),
                 "amount", amount,
-                "appliedAt", appliedAt
+                "appliedAt", appliedAt.atOffset(ZoneOffset.UTC)
         );
         UUID budgetId = jdbcClient.sql(RECORD_CONSUMPTION)
                 .params(parameters)
@@ -60,7 +61,7 @@ class BudgetConsumptionPersistenceAdapter implements ApplyBudgetConsumptionPort 
         int updated = jdbcClient.sql(INCREASE_SPENT_AMOUNT)
                 .param("budgetId", budgetId)
                 .param("amount", amount)
-                .param("appliedAt", appliedAt)
+                .param("appliedAt", appliedAt.atOffset(ZoneOffset.UTC))
                 .update();
         if (updated != 1) {
             throw new IllegalStateException("예산 사용액을 갱신할 수 없습니다.");
