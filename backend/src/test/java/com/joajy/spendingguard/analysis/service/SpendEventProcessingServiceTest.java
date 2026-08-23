@@ -14,6 +14,7 @@ import com.joajy.spendingguard.analysis.service.port.outbound.TryClaimProcessedE
 import com.joajy.spendingguard.analysis.service.port.outbound.UpdateSpendEventStatusPort;
 import com.joajy.spendingguard.analysis.service.result.SpendEventProcessingResult;
 import com.joajy.spendingguard.analysis.domain.policy.FastSpendEventParser;
+import com.joajy.spendingguard.analysis.domain.policy.SpendRiskClassifier;
 import com.joajy.spendingguard.spendevent.domain.model.SpendEventStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -60,6 +61,7 @@ class SpendEventProcessingServiceTest {
                 updateSpendEventStatusPort,
                 applyBudgetConsumptionPort,
                 new FastSpendEventParser(),
+                new SpendRiskClassifier(),
                 Clock.fixed(NOW, ZoneOffset.UTC)
         );
     }
@@ -85,6 +87,7 @@ class SpendEventProcessingServiceTest {
         assertThat(result).isEqualTo(SpendEventProcessingResult.PROCESSED);
         verify(storeFastParseResultPort).store(
                 eq(eventId),
+                any(),
                 any(),
                 eq(SpendEventProcessingService.PARSER_VERSION),
                 eq(NOW)
@@ -143,7 +146,7 @@ class SpendEventProcessingServiceTest {
 
         assertThat(result).isEqualTo(SpendEventProcessingResult.ALREADY_PROCESSED);
         verify(loadSpendEventForAnalysisPort, never()).load(any());
-        verify(storeFastParseResultPort, never()).store(any(), any(), any(), any());
+        verify(storeFastParseResultPort, never()).store(any(), any(), any(), any(), any());
         verify(updateSpendEventStatusPort, never()).update(any(), any());
     }
 }

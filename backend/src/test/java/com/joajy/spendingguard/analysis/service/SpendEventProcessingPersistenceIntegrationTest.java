@@ -81,6 +81,10 @@ class SpendEventProcessingPersistenceIntegrationTest {
         assertThat(parseResult.getAmount()).isEqualByComparingTo("12800");
         assertThat(parseResult.getTransactionType()).isEqualTo(TransactionType.PAYMENT);
         assertThat(parseResult.getStatus()).isEqualTo(FastParseStatus.PARSED);
+        assertThat(parseResult.getCategory().name()).isEqualTo("SHOPPING");
+        assertThat(parseResult.getFixedCost()).isFalse();
+        assertThat(parseResult.getRiskLevel().name()).isEqualTo("LOW");
+        assertThat(parseResult.getRiskReason()).isEqualTo("NORMAL_PATTERN");
         assertThat(processedEventRepository.count()).isOne();
         assertThat(rawEvent.getStatus()).isEqualTo(SpendEventStatus.ANALYZING);
     }
@@ -95,6 +99,7 @@ class SpendEventProcessingPersistenceIntegrationTest {
         var rawEvent = rawSpendEventRepository.findById(receipt.eventId()).orElseThrow();
         assertThat(result).isEqualTo(SpendEventProcessingResult.NEEDS_REVIEW);
         assertThat(parseResult.getReviewReason()).isEqualTo("AMOUNT_NOT_FOUND");
+        assertThat(parseResult.getRiskLevel()).isNull();
         assertThat(rawEvent.getStatus()).isEqualTo(SpendEventStatus.NEEDS_REVIEW);
     }
 

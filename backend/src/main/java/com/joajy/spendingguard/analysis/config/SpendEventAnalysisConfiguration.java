@@ -1,6 +1,7 @@
 package com.joajy.spendingguard.analysis.config;
 
 import com.joajy.spendingguard.analysis.domain.policy.FastSpendEventParser;
+import com.joajy.spendingguard.analysis.domain.policy.SpendRiskClassifier;
 import com.joajy.spendingguard.analysis.messaging.InvalidSpendEventMessageException;
 import org.apache.kafka.common.TopicPartition;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -19,6 +20,11 @@ class SpendEventAnalysisConfiguration {
     @Bean
     FastSpendEventParser fastSpendEventParser() {
         return new FastSpendEventParser();
+    }
+
+    @Bean
+    SpendRiskClassifier spendRiskClassifier() {
+        return new SpendRiskClassifier();
     }
 
     @Bean

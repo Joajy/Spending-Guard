@@ -17,6 +17,8 @@ import com.joajy.spendingguard.analysis.service.result.SpendEventProcessingResul
 import com.joajy.spendingguard.analysis.domain.model.FastParseOutcome;
 import com.joajy.spendingguard.analysis.domain.model.TransactionType;
 import com.joajy.spendingguard.analysis.domain.policy.FastSpendEventParser;
+import com.joajy.spendingguard.analysis.domain.policy.SpendRiskClassifier;
+import com.joajy.spendingguard.analysis.domain.model.SpendRiskAssessment;
 import com.joajy.spendingguard.spendevent.domain.model.SpendEventStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,6 +46,7 @@ public class SpendEventProcessingService implements ProcessSpendEventUseCase {
     private final UpdateSpendEventStatusPort updateSpendEventStatusPort;
     private final ApplyBudgetConsumptionPort applyBudgetConsumptionPort;
     private final FastSpendEventParser parser;
+    private final SpendRiskClassifier riskClassifier;
     private final Clock clock;
 
     public SpendEventProcessingService(
@@ -53,6 +56,7 @@ public class SpendEventProcessingService implements ProcessSpendEventUseCase {
             UpdateSpendEventStatusPort updateSpendEventStatusPort,
             ApplyBudgetConsumptionPort applyBudgetConsumptionPort,
             FastSpendEventParser parser,
+            SpendRiskClassifier riskClassifier,
             Clock clock
     ) {
         this.tryClaimProcessedEventPort = tryClaimProcessedEventPort;
@@ -61,6 +65,7 @@ public class SpendEventProcessingService implements ProcessSpendEventUseCase {
         this.updateSpendEventStatusPort = updateSpendEventStatusPort;
         this.applyBudgetConsumptionPort = applyBudgetConsumptionPort;
         this.parser = parser;
+        this.riskClassifier = riskClassifier;
         this.clock = clock;
     }
 
@@ -78,9 +83,16 @@ public class SpendEventProcessingService implements ProcessSpendEventUseCase {
 
         SpendEventAnalysisTarget target = loadSpendEventForAnalysisPort.load(command.eventId());
         FastParseOutcome outcome = parser.parse(target.sanitizedMessage());
+        SpendRiskAssessment riskAssessment = outcome.needsReview() ? null : riskClassifier.classify(
+                target.sanitizedMessage(),
+                outcome.amount(),
+                outcome.transactionType(),
+                target.occurredAt()
+        );
         storeFastParseResultPort.store(
                 command.eventId(),
                 outcome,
+                riskAssessment,
                 PARSER_VERSION,
                 processedAt
         );

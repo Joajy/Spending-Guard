@@ -53,6 +53,7 @@ jobs:
 
           totals = {"tests": 0, "failures": 0, "errors": 0, "skipped": 0}
           parser_evaluation = {"tests": 0, "failed": 0, "skipped": 0}
+          risk_evaluation = {"tests": 0, "failed": 0, "skipped": 0}
           for report in glob.glob("build/test-results/test/TEST-*.xml"):
               suite = ET.parse(report).getroot()
               for key in totals:
@@ -64,6 +65,13 @@ jobs:
                       + int(suite.attrib.get("errors", 0))
                   )
                   parser_evaluation["skipped"] += int(suite.attrib.get("skipped", 0))
+              if suite.attrib.get("name", "").endswith("SpendRiskClassifierEvaluationTest"):
+                  risk_evaluation["tests"] += int(suite.attrib.get("tests", 0))
+                  risk_evaluation["failed"] += (
+                      int(suite.attrib.get("failures", 0))
+                      + int(suite.attrib.get("errors", 0))
+                  )
+                  risk_evaluation["skipped"] += int(suite.attrib.get("skipped", 0))
 
           executed = totals["tests"] - totals["skipped"]
           passed = executed - totals["failures"] - totals["errors"]
@@ -91,6 +99,9 @@ jobs:
           parser_accuracy = (
               parser_correct / parser_executed * 100 if parser_executed else 0.0
           )
+          risk_executed = risk_evaluation["tests"] - risk_evaluation["skipped"]
+          risk_correct = risk_executed - risk_evaluation["failed"]
+          risk_accuracy = risk_correct / risk_executed * 100 if risk_executed else 0.0
 
           summary = (
               f"Tests: {passed}/{executed} passed ({pass_rate:.2f}%)\n"
@@ -98,6 +109,8 @@ jobs:
               f"Skipped: {totals['skipped']}\n"
               f"Fast parser evaluation: {parser_correct}/{parser_executed} correct "
               f"({parser_accuracy:.2f}%)\n"
+              f"Risk classifier evaluation: {risk_correct}/{risk_executed} correct "
+              f"({risk_accuracy:.2f}%)\n"
               f"Line coverage: {percentage('LINE'):.2f}%\n"
               f"Branch coverage: {percentage('BRANCH'):.2f}%"
           )
