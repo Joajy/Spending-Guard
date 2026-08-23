@@ -32,6 +32,7 @@ class SpendEventAnalysisPersistenceAdapter implements
                 .orElseThrow(() -> new SpendEventNotFoundException(eventId));
         return new SpendEventAnalysisTarget(
                 event.getId(),
+                event.getUserId(),
                 event.getSanitizedMessage(),
                 event.getOccurredAt()
         );
