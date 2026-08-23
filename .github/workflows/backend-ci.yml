@@ -135,12 +135,19 @@ jobs:
           --health-interval 5s
           --health-timeout 3s
           --health-retries 10
+      mailpit:
+        image: axllent/mailpit:v1.30.3
+        ports:
+          - 1025:1025
+          - 8025:8025
     env:
       DB_URL: jdbc:postgresql://localhost:5432/spending_guard
       DB_USERNAME: spending_guard
       DB_PASSWORD: local_password
       OUTBOX_PUBLISHER_ENABLED: "false"
       SPEND_EVENT_CONSUMER_ENABLED: "false"
+      MAIL_HOST: localhost
+      MAIL_PORT: "1025"
 
     steps:
       - name: Checkout repository
