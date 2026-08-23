@@ -108,6 +108,54 @@
       }]
     },
     {
+      "name": "월간 예산 설정",
+      "request": {
+        "method": "PUT",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {"mode": "raw", "raw": "{\n  \"amount\": 500000\n}"},
+        "url": "{{baseUrl}}/api/v1/users/{{userId}}/budgets/2026-08"
+      },
+      "event": [{"listen": "test", "script": {"exec": [
+        "pm.test('200 OK', () => pm.response.to.have.status(200));",
+        "pm.test('잔여 예산이 설정 금액과 같다', () => pm.expect(pm.response.json().remainingAmount).to.eql(500000));",
+        "pm.collectionVariables.set('budgetVersion', pm.response.json().version);"
+      ]}}]
+    },
+    {
+      "name": "월간 예산 조회",
+      "request": {"method": "GET", "url": "{{baseUrl}}/api/v1/users/{{userId}}/budgets/2026-08"},
+      "event": [{"listen": "test", "script": {"exec": [
+        "pm.test('200 OK', () => pm.response.to.have.status(200));",
+        "pm.test('설정한 월과 금액을 조회한다', () => { const body=pm.response.json(); pm.expect(body.month).to.eql('2026-08'); pm.expect(body.limitAmount).to.eql(500000); });"
+      ]}}]
+    },
+    {
+      "name": "월간 예산 수정",
+      "request": {
+        "method": "PUT",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {"mode": "raw", "raw": "{\n  \"amount\": 600000,\n  \"version\": {{budgetVersion}}\n}"},
+        "url": "{{baseUrl}}/api/v1/users/{{userId}}/budgets/2026-08"
+      },
+      "event": [{"listen": "test", "script": {"exec": [
+        "pm.test('200 OK', () => pm.response.to.have.status(200));",
+        "pm.test('예산과 버전이 갱신된다', () => { const body=pm.response.json(); pm.expect(body.limitAmount).to.eql(600000); pm.expect(body.version).to.be.above(Number(pm.collectionVariables.get('budgetVersion'))); });"
+      ]}}]
+    },
+    {
+      "name": "오래된 버전으로 월간 예산 수정",
+      "request": {
+        "method": "PUT",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {"mode": "raw", "raw": "{\n  \"amount\": 700000,\n  \"version\": {{budgetVersion}}\n}"},
+        "url": "{{baseUrl}}/api/v1/users/{{userId}}/budgets/2026-08"
+      },
+      "event": [{"listen": "test", "script": {"exec": [
+        "pm.test('409 Conflict', () => pm.response.to.have.status(409));",
+        "pm.test('오래된 수정 요청임을 알린다', () => pm.expect(pm.response.json().title).to.eql('Stale budget version'));"
+      ]}}]
+    },
+    {
       "name": "회원 등록 - 이메일 중복",
       "request": {
         "method": "POST",
