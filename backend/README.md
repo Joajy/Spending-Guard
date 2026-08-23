@@ -21,6 +21,7 @@
 ```http
 POST http://localhost:8080/api/v1/spend-events
 Content-Type: application/json
+Authorization: Bearer {로그인 응답의 accessToken}
 
 {
   "source": "MANUAL_TEXT",
@@ -29,7 +30,7 @@ Content-Type: application/json
 }
 ```
 
-Postman에서는 저장소의 `postman/Spending-Guard.postman_collection.json`을 불러오면 상태 확인, 정상 접수, 중복 접수를 순서대로 확인할 수 있습니다.
+Postman에서는 저장소의 `postman/Spending-Guard.postman_collection.json`을 불러오면 회원 등록과 이메일 인증, 로그인, 소비 접수를 순서대로 확인할 수 있습니다. 로그인 응답의 JWT는 컬렉션 변수에 저장되어 이후 보호 API 요청에 자동으로 사용됩니다.
 
 로컬 기본값은 `application.yml`에 정의되어 있습니다. 실제 비밀번호나 외부 서비스 키는 파일에 저장하지 않고 환경 변수로 주입합니다.
 
@@ -51,7 +52,12 @@ SPEND_EVENT_CONSUMER_GROUP_ID=spending-guard-fast-parser-v1
 SPEND_EVENT_CONSUMER_MAX_RETRIES=3
 SPEND_EVENT_CONSUMER_RETRY_BACKOFF=1s
 SPEND_EVENT_CONSUMER_DLT=spend-event.received.v1.DLT
+JWT_ISSUER=https://spending-guard.local
+JWT_SECRET=32바이트 이상의 임의 문자열
+JWT_ACCESS_TOKEN_TTL=15m
 ```
+
+`JWT_SECRET`의 기본값은 로컬 실행 전용입니다. 외부에서 접근 가능한 환경에서는 충분히 긴 임의 값으로 반드시 교체합니다.
 
 발행 성공·실패와 배치 처리 시간은 `/actuator/metrics`에서 `spending.guard.outbox`로 시작하는 지표를 조회할 수 있습니다.
 

@@ -41,6 +41,10 @@ spring:
       mail.smtp.writetimeout: ${MAIL_WRITE_TIMEOUT:5000}
 
 spending-guard:
+  security:
+    issuer: ${JWT_ISSUER:https://spending-guard.local}
+    secret: ${JWT_SECRET:local-development-secret-change-me-32-bytes}
+    access-token-ttl: ${JWT_ACCESS_TOKEN_TTL:15m}
   mail:
     from: ${MAIL_FROM:no-reply@spending-guard.local}
   outbox:

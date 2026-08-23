@@ -185,7 +185,7 @@ jobs:
           chmod +x gradlew
           mkdir -p build/postman
           ./gradlew bootRun --no-daemon > build/postman/application.log 2>&1 &
-          for attempt in {1..30}; do
+          for attempt in {1..60}; do
             if curl --fail --silent http://localhost:8080/api/v1/status > /dev/null; then
               exit 0
             fi

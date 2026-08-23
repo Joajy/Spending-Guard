@@ -11,6 +11,7 @@ import com.joajy.spendingguard.spendevent.service.port.inbound.SubmitSpendEventU
 import com.joajy.spendingguard.spendevent.service.result.SpendEventReceipt;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -52,6 +53,7 @@ public class SpendEventController {
      * @return 이벤트 ID와 접수 상태를 담은 {@code 202 Accepted} 응답
      */
     @PostMapping
+    @PreAuthorize("@userScope.matches(authentication, #userId)")
     public ResponseEntity<SpendEventAcceptedResponse> submit(
             @PathVariable UUID userId,
             @Valid @RequestBody SubmitSpendEventRequest request,
@@ -71,6 +73,7 @@ public class SpendEventController {
      * @return 조회 시점의 상태와, 분석이 시작된 경우 빠른 파싱 결과
      */
     @GetMapping("/{eventId}")
+    @PreAuthorize("@userScope.matches(authentication, #userId)")
     public SpendEventDetailResponse get(@PathVariable UUID userId, @PathVariable UUID eventId) {
         return SpendEventDetailResponse.from(getSpendEventUseCase.get(userId, eventId));
     }
