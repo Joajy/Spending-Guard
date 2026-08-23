@@ -85,6 +85,10 @@ public class RawSpendEventEntity {
         return id;
     }
 
+    public UUID getUserId() {
+        return userId;
+    }
+
     public String getSanitizedMessage() {
         return sanitizedMessage;
     }

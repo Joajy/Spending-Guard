@@ -2,16 +2,20 @@ package com.joajy.spendingguard.analysis.service;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.time.YearMonth;
+import java.time.ZoneOffset;
 
 import com.joajy.spendingguard.analysis.service.command.ProcessSpendEventCommand;
 import com.joajy.spendingguard.analysis.service.model.SpendEventAnalysisTarget;
 import com.joajy.spendingguard.analysis.service.port.inbound.ProcessSpendEventUseCase;
 import com.joajy.spendingguard.analysis.service.port.outbound.LoadSpendEventForAnalysisPort;
+import com.joajy.spendingguard.analysis.service.port.outbound.ApplyBudgetConsumptionPort;
 import com.joajy.spendingguard.analysis.service.port.outbound.StoreFastParseResultPort;
 import com.joajy.spendingguard.analysis.service.port.outbound.TryClaimProcessedEventPort;
 import com.joajy.spendingguard.analysis.service.port.outbound.UpdateSpendEventStatusPort;
 import com.joajy.spendingguard.analysis.service.result.SpendEventProcessingResult;
 import com.joajy.spendingguard.analysis.domain.model.FastParseOutcome;
+import com.joajy.spendingguard.analysis.domain.model.TransactionType;
 import com.joajy.spendingguard.analysis.domain.policy.FastSpendEventParser;
 import com.joajy.spendingguard.spendevent.domain.model.SpendEventStatus;
 import org.springframework.stereotype.Service;
@@ -38,6 +42,7 @@ public class SpendEventProcessingService implements ProcessSpendEventUseCase {
     private final LoadSpendEventForAnalysisPort loadSpendEventForAnalysisPort;
     private final StoreFastParseResultPort storeFastParseResultPort;
     private final UpdateSpendEventStatusPort updateSpendEventStatusPort;
+    private final ApplyBudgetConsumptionPort applyBudgetConsumptionPort;
     private final FastSpendEventParser parser;
     private final Clock clock;
 
@@ -46,6 +51,7 @@ public class SpendEventProcessingService implements ProcessSpendEventUseCase {
             LoadSpendEventForAnalysisPort loadSpendEventForAnalysisPort,
             StoreFastParseResultPort storeFastParseResultPort,
             UpdateSpendEventStatusPort updateSpendEventStatusPort,
+            ApplyBudgetConsumptionPort applyBudgetConsumptionPort,
             FastSpendEventParser parser,
             Clock clock
     ) {
@@ -53,6 +59,7 @@ public class SpendEventProcessingService implements ProcessSpendEventUseCase {
         this.loadSpendEventForAnalysisPort = loadSpendEventForAnalysisPort;
         this.storeFastParseResultPort = storeFastParseResultPort;
         this.updateSpendEventStatusPort = updateSpendEventStatusPort;
+        this.applyBudgetConsumptionPort = applyBudgetConsumptionPort;
         this.parser = parser;
         this.clock = clock;
     }
@@ -81,6 +88,17 @@ public class SpendEventProcessingService implements ProcessSpendEventUseCase {
         if (outcome.needsReview()) {
             updateSpendEventStatusPort.update(command.eventId(), SpendEventStatus.NEEDS_REVIEW);
             return SpendEventProcessingResult.NEEDS_REVIEW;
+        }
+
+        if (target.userId() != null && outcome.transactionType() == TransactionType.PAYMENT) {
+            Instant occurredAt = target.occurredAt() == null ? processedAt : target.occurredAt();
+            applyBudgetConsumptionPort.apply(
+                    target.userId(),
+                    command.eventId(),
+                    YearMonth.from(occurredAt.atZone(ZoneOffset.UTC)),
+                    outcome.amount().longValueExact(),
+                    processedAt
+            );
         }
 
         updateSpendEventStatusPort.update(command.eventId(), SpendEventStatus.ANALYZING);
