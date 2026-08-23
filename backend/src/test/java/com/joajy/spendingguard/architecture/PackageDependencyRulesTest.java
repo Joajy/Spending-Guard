@@ -21,8 +21,25 @@ class PackageDependencyRulesTest {
                 .should().dependOnClassesThat().resideInAnyPackage(
                         "..api..",
                         "..application..",
-                        "..infrastructure.."
+                        "..infrastructure..",
+                        "..controller..",
+                        "..service..",
+                        "..repository.."
                 )
+                .check(CLASSES);
+    }
+
+    @Test
+    void featureServicesDoNotDependOnWebOrPersistenceImplementations() {
+        noClasses().that().resideInAPackage("..service..")
+                .should().dependOnClassesThat().resideInAnyPackage("..controller..", "..repository..")
+                .check(CLASSES);
+    }
+
+    @Test
+    void featureControllersDoNotDependOnPersistenceImplementations() {
+        noClasses().that().resideInAPackage("..controller..")
+                .should().dependOnClassesThat().resideInAPackage("..repository..")
                 .check(CLASSES);
     }
 
@@ -43,14 +60,14 @@ class PackageDependencyRulesTest {
     @Test
     void persistenceEntitiesStayInInfrastructure() {
         classes().that().areAnnotatedWith(Entity.class)
-                .should().resideInAPackage("..infrastructure.persistence..")
+                .should().resideInAnyPackage("..infrastructure.persistence..", "..repository..")
                 .check(CLASSES);
     }
 
     @Test
     void adaptersStayInInfrastructure() {
         classes().that().haveSimpleNameEndingWith("Adapter")
-                .should().resideInAPackage("..infrastructure..")
+                .should().resideInAnyPackage("..infrastructure..", "..repository..")
                 .check(CLASSES);
     }
 }
