@@ -81,6 +81,20 @@
       }]
     },
     {
+      "name": "이메일 인증번호 즉시 재발급 제한",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/v1/users/{{userId}}/email-verification"
+      },
+      "event": [{
+        "listen": "test",
+        "script": {"exec": [
+          "pm.test('429 Too Many Requests', () => pm.response.to.have.status(429));",
+          "pm.test('재발급 제한 사유가 포함된다', () => pm.expect(pm.response.json().title).to.eql('Verification temporarily limited'));"
+        ]}
+      }]
+    },
+    {
       "name": "이메일 인증 완료",
       "request": {
         "method": "POST",

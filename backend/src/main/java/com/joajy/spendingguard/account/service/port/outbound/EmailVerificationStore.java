@@ -11,11 +11,13 @@ public interface EmailVerificationStore {
 
     Optional<Challenge> findChallenge(UUID userId);
 
+    int incrementFailedAttempts(UUID userId);
+
     boolean markVerifiedAndDeleteChallenge(UUID userId, Instant verifiedAt);
 
     record AccountTarget(UUID userId, String email, boolean verified) {
     }
 
-    record Challenge(String codeHash, Instant expiresAt) {
+    record Challenge(String codeHash, Instant expiresAt, Instant createdAt, int failedAttempts) {
     }
 }
