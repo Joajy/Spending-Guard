@@ -5,7 +5,9 @@ import java.time.*;
 import java.util.Optional;
 import java.util.UUID;
 import com.joajy.spendingguard.account.service.exception.InvalidVerificationCodeException;
+import com.joajy.spendingguard.account.service.exception.TooManyVerificationAttemptsException;
 import com.joajy.spendingguard.account.service.exception.UserAccountNotFoundException;
+import com.joajy.spendingguard.account.service.exception.VerificationCodeRequestTooFrequentException;
 import com.joajy.spendingguard.account.service.port.outbound.EmailVerificationStore;
 import com.joajy.spendingguard.account.service.port.outbound.SendVerificationCodePort;
 import org.junit.jupiter.api.*;
@@ -26,6 +28,7 @@ class EmailVerificationServiceTest {
 
     @Test void issuesSixDigitCodeAndStoresOnlyHash() {
         given(store.findAccount(USER_ID)).willReturn(Optional.of(new EmailVerificationStore.AccountTarget(USER_ID, "user@example.com", false)));
+        given(store.findChallenge(USER_ID)).willReturn(Optional.empty());
         given(random.nextInt(1_000_000)).willReturn(42);
         given(encoder.encode("000042")).willReturn("hashed-code");
         service.issue(USER_ID);
@@ -45,8 +48,17 @@ class EmailVerificationServiceTest {
         assertThatThrownBy(() -> service.issue(USER_ID)).isInstanceOf(UserAccountNotFoundException.class);
     }
 
+    @Test void rejectsResendWithinOneMinute() {
+        given(store.findAccount(USER_ID)).willReturn(Optional.of(new EmailVerificationStore.AccountTarget(USER_ID, "user@example.com", false)));
+        given(store.findChallenge(USER_ID)).willReturn(Optional.of(challenge(NOW.plus(Duration.ofMinutes(5)), NOW.minusSeconds(59), 0)));
+
+        assertThatThrownBy(() -> service.issue(USER_ID)).isInstanceOf(VerificationCodeRequestTooFrequentException.class);
+        then(sender).shouldHaveNoInteractions();
+    }
+
     @Test void confirmsValidUnexpiredCodeOnce() {
-        given(store.findChallenge(USER_ID)).willReturn(Optional.of(new EmailVerificationStore.Challenge("hash", NOW.plusSeconds(1))));
+        givenAccount();
+        given(store.findChallenge(USER_ID)).willReturn(Optional.of(challenge(NOW.plusSeconds(1), NOW.minusSeconds(1), 0)));
         given(encoder.matches("123456", "hash")).willReturn(true);
         given(store.markVerifiedAndDeleteChallenge(USER_ID, NOW)).willReturn(true);
         service.confirm(USER_ID, "123456");
@@ -54,15 +66,36 @@ class EmailVerificationServiceTest {
     }
 
     @Test void rejectsExpiredCodeWithoutChangingAccount() {
-        given(store.findChallenge(USER_ID)).willReturn(Optional.of(new EmailVerificationStore.Challenge("hash", NOW)));
+        givenAccount();
+        given(store.findChallenge(USER_ID)).willReturn(Optional.of(challenge(NOW, NOW.minusSeconds(1), 0)));
         assertThatThrownBy(() -> service.confirm(USER_ID, "123456")).isInstanceOf(InvalidVerificationCodeException.class);
         then(store).should(never()).markVerifiedAndDeleteChallenge(any(), any());
     }
 
     @Test void rejectsIncorrectCodeWithoutChangingAccount() {
-        given(store.findChallenge(USER_ID)).willReturn(Optional.of(new EmailVerificationStore.Challenge("hash", NOW.plusSeconds(1))));
+        givenAccount();
+        given(store.findChallenge(USER_ID)).willReturn(Optional.of(challenge(NOW.plusSeconds(1), NOW.minusSeconds(1), 0)));
         given(encoder.matches("654321", "hash")).willReturn(false);
+        given(store.incrementFailedAttempts(USER_ID)).willReturn(1);
         assertThatThrownBy(() -> service.confirm(USER_ID, "654321")).isInstanceOf(InvalidVerificationCodeException.class);
         then(store).should(never()).markVerifiedAndDeleteChallenge(any(), any());
+    }
+
+    @Test void locksChallengeOnFifthIncorrectCode() {
+        givenAccount();
+        given(store.findChallenge(USER_ID)).willReturn(Optional.of(challenge(NOW.plusSeconds(1), NOW.minusSeconds(1), 4)));
+        given(encoder.matches("654321", "hash")).willReturn(false);
+        given(store.incrementFailedAttempts(USER_ID)).willReturn(5);
+
+        assertThatThrownBy(() -> service.confirm(USER_ID, "654321"))
+                .isInstanceOf(TooManyVerificationAttemptsException.class);
+    }
+
+    private void givenAccount() {
+        given(store.findAccount(USER_ID)).willReturn(Optional.of(new EmailVerificationStore.AccountTarget(USER_ID, "user@example.com", false)));
+    }
+
+    private EmailVerificationStore.Challenge challenge(Instant expiresAt, Instant createdAt, int failedAttempts) {
+        return new EmailVerificationStore.Challenge("hash", expiresAt, createdAt, failedAttempts);
     }
 }

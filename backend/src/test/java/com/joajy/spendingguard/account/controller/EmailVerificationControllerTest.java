@@ -2,6 +2,7 @@ package com.joajy.spendingguard.account.controller;
 
 import java.util.UUID;
 import com.joajy.spendingguard.account.service.exception.InvalidVerificationCodeException;
+import com.joajy.spendingguard.account.service.exception.VerificationCodeRequestTooFrequentException;
 import com.joajy.spendingguard.account.service.port.inbound.VerifyEmailUseCase;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +31,14 @@ class EmailVerificationControllerTest {
                 .contentType(MediaType.APPLICATION_JSON).content("{\"code\":\"123456\"}"))
                 .andExpect(status().isNoContent());
         then(useCase).should().confirm(USER_ID, "123456");
+    }
+
+    @Test void returnsTooManyRequestsForImmediateResend() throws Exception {
+        willThrow(new VerificationCodeRequestTooFrequentException()).given(useCase).issue(USER_ID);
+
+        mockMvc.perform(post("/api/v1/users/{id}/email-verification", USER_ID))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.title").value("Verification temporarily limited"));
     }
 
     @Test void rejectsMalformedCodeBeforeUseCase() throws Exception {
