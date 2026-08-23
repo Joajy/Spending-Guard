@@ -59,7 +59,11 @@ class SpendEventQueryPersistenceAdapter implements LoadSpendEventDetailPort {
 
     @Override
     public Optional<SpendEventDetail> findById(UUID eventId) {
-        return jdbcClient.sql(FIND_BY_USER_AND_ID.replace("raw_event.user_id = :userId\n               AND ", ""))
+        String query = FIND_BY_USER_AND_ID.replaceAll(
+                "raw_event\\.user_id = :userId\\s+AND\\s+",
+                ""
+        );
+        return jdbcClient.sql(query)
                 .param("eventId", eventId)
                 .query(this::map)
                 .optional();

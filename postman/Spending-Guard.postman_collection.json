@@ -281,7 +281,7 @@
               "pm.collectionVariables.set('spendEventId', pm.response.json().eventId);",
               "pm.test('202 Accepted', () => pm.response.to.have.status(202));",
               "pm.test('RECEIVED 상태로 접수된다', () => pm.expect(pm.response.json().status).to.eql('RECEIVED'));",
-              "pm.test('조회 경로가 Location에 포함된다', () => pm.expect(pm.response.headers.get('Location')).to.include('/api/v1/spend-events/'));"
+              "pm.test('조회 경로가 Location에 포함된다', () => pm.expect(pm.response.headers.get('Location')).to.include('/api/v1/users/' + pm.collectionVariables.get('userId') + '/spend-events/'));"
             ]
           }
         }
