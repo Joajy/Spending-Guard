@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body style="margin:0;background:#f4f6f8;font-family:Arial,'Noto Sans KR',sans-serif;color:#202124">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="padding:32px 16px">
+    <tr>
+        <td align="center">
+            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                   style="max-width:560px;background:#ffffff;border:1px solid #e7e9ec;border-radius:12px;padding:40px">
+                <tr><td style="font-size:14px;font-weight:700;color:#2563eb">SPENDING GUARD</td></tr>
+                <tr><td style="padding-top:18px;font-size:24px;font-weight:700">이메일을 확인해 주세요</td></tr>
+                <tr>
+                    <td style="padding-top:12px;font-size:15px;line-height:1.7;color:#5f6368">
+                        아래 인증번호를 Spending Guard 화면에 입력하면 이메일 인증이 완료됩니다.
+                    </td>
+                </tr>
+                <tr>
+                    <td align="center" th:text="${verificationCode}"
+                        style="padding:28px 0;font-size:34px;font-weight:700;letter-spacing:8px;color:#111827">000000</td>
+                </tr>
+                <tr>
+                    <td style="font-size:13px;line-height:1.6;color:#70757a">
+                        인증번호는 <span th:text="${validMinutes}">5</span>분 동안 유효합니다.<br>
+                        본인이 요청하지 않았다면 이 메일을 무시해 주세요.
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+</body>
+</html>
