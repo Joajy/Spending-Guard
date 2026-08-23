@@ -26,6 +26,9 @@ public class UserAccountEntity {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
+    @Column(name = "email_verified_at")
+    private Instant emailVerifiedAt;
+
     protected UserAccountEntity() {
     }
 
@@ -50,5 +53,13 @@ public class UserAccountEntity {
 
     public String getPasswordHash() {
         return passwordHash;
+    }
+
+    public Instant getEmailVerifiedAt() {
+        return emailVerifiedAt;
+    }
+
+    void verifyEmail(Instant verifiedAt) {
+        this.emailVerifiedAt = verifiedAt;
     }
 }
