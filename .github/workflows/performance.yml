@@ -122,10 +122,10 @@ jobs:
 
       - name: Install Apache JMeter
         run: |
-          curl --fail --silent --show-error --location --remote-name \
-            "https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-${JMETER_VERSION}.tgz"
-          curl --fail --silent --show-error --location --remote-name \
-            "https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-${JMETER_VERSION}.tgz.sha512"
+          curl --fail --silent --show-error --location --retry 3 --remote-name \
+            "https://dlcdn.apache.org/jmeter/binaries/apache-jmeter-${JMETER_VERSION}.tgz"
+          curl --fail --silent --show-error --location --retry 3 --remote-name \
+            "https://downloads.apache.org/jmeter/binaries/apache-jmeter-${JMETER_VERSION}.tgz.sha512"
           sha512sum --check "apache-jmeter-${JMETER_VERSION}.tgz.sha512"
           tar --extract --gzip --file "apache-jmeter-${JMETER_VERSION}.tgz"
 
