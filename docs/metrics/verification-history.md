@@ -180,6 +180,33 @@ Artifact는 보존 기간이 지나면 내려받을 수 없으므로 실행 결�
 
 증빙: [GitHub Actions 실행 결과](https://github.com/Joajy/Spending-Guard/actions/runs/32735265418), [원인과 해결 이력](https://github.com/Joajy/Spending-Guard/issues/25)
 
+### 월별 소비 내역 조회
+
+기준: `feat/transaction-history`, Backend CI #73, 2026-08-25
+
+| 구분 | 결과 |
+|---|---:|
+| 백엔드 테스트 | 176/176 통과 |
+| 테스트 실패·오류·건너뜀 | 0/0/0 |
+| 라인 커버리지 | 91.60% |
+| 브랜치 커버리지 | 78.52% |
+| Postman 요청 | 23/23 성공 |
+| Postman assertion | 49/49 통과 |
+| Postman 평균 응답 시간 | 93.96ms |
+
+다음 조회 경계와 페이지 정합성을 검증했다.
+
+- 인증된 사용자 본인의 데이터만 조회하고, 존재하지 않는 사용자는 404로 구분한다.
+- 서비스 기준 시간대인 Asia/Seoul의 월 시작 이상·다음 달 시작 미만 범위만 반환한다.
+- 처리 상태와 카테고리 조건을 선택적으로 적용한다.
+- 거래 시각과 이벤트 ID를 함께 사용한 커서로 페이지 사이의 중복과 누락을 방지한다.
+- 커서에 PostgreSQL의 마이크로초 시각 정밀도를 보존한다.
+- 응답의 표시 문구에는 저장 전에 정제한 텍스트만 사용한다.
+
+첫 실행에서는 PostgreSQL JDBC가 `Instant` 파라미터의 SQL 타입을 추론하지 못해 통합 테스트 1건과 Postman 목록 조회가 실패했다. `timestamptz` 파라미터를 UTC `OffsetDateTime`으로 명시해 바인딩한 뒤 전체 검증을 통과했다.
+
+증빙: [GitHub Actions 실행 결과](https://github.com/Joajy/Spending-Guard/actions/runs/32742381953), [원인과 해결 이력](https://github.com/Joajy/Spending-Guard/issues/27)
+
 ## 수치 해석 기준
 
 - `100% 파서 정답률`은 고정된 25건의 회귀 데이터셋에 대한 결과다. 금융 알림 전체나 운영 환경의 일반 정확도를 의미하지 않는다.
@@ -194,7 +221,7 @@ Artifact는 보존 기간이 지나면 내려받을 수 없으므로 실행 결�
 - Testcontainers 기반 PostgreSQL과 Embedded Kafka를 사용하는 자동 검증 환경을 구성했다.
 - Kafka 중복 전달 상황에서 데이터베이스 고유 제약과 원자적 INSERT를 이용해 중복 업무 쓰기 0건을 확인했다.
 - 8개 스레드의 동시 재전달에서 최초 처리 1건과 중복 판정 7건으로 일관된 결과를 확인했다.
-- 현재 회귀 범위에서 백엔드 테스트 167건과 Postman assertion 45건을 모두 통과했다.
+- 현재 회귀 범위에서 백엔드 테스트 176건과 Postman assertion 49건을 모두 통과했다.
 - 같은 이메일의 8개 동시 등록에서 계정 1건만 저장되고 나머지 7건은 중복으로 처리됐다.
 - 회원 비밀번호를 BCrypt work factor 12로 해시하고 API와 데이터베이스에 평문을 남기지 않는 경계를 검증했다.
 - 접수 후 반환된 이벤트 식별자를 이용해 비동기 상태를 다시 조회하는 API 흐름을 6개 Postman 요청으로 검증했다.
