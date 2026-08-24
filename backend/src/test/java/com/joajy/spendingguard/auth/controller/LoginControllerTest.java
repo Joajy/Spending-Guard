@@ -5,7 +5,7 @@ import java.util.UUID;
 
 import com.joajy.spendingguard.auth.service.LoginService;
 import com.joajy.spendingguard.auth.service.exception.InvalidCredentialsException;
-import com.joajy.spendingguard.auth.service.result.AccessToken;
+import com.joajy.spendingguard.auth.service.result.AuthTokens;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -34,8 +34,9 @@ class LoginControllerTest {
     @Test
     void returnsAccessToken() throws Exception {
         UUID userId = UUID.randomUUID();
-        given(service.login("user@example.com", "password-123")).willReturn(new AccessToken(
-                "Bearer", "signed-token", Instant.parse("2026-08-23T01:15:00Z"), userId
+        given(service.login("user@example.com", "password-123")).willReturn(new AuthTokens(
+                "Bearer", "signed-token", Instant.parse("2026-08-23T01:15:00Z"),
+                "refresh-token", Instant.parse("2026-09-06T01:00:00Z"), userId
         ));
 
         mockMvc.perform(post("/api/v1/auth/login")
@@ -44,6 +45,7 @@ class LoginControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.tokenType").value("Bearer"))
                 .andExpect(jsonPath("$.accessToken").value("signed-token"))
+                .andExpect(jsonPath("$.refreshToken").value("refresh-token"))
                 .andExpect(jsonPath("$.userId").value(userId.toString()));
     }
 
@@ -62,8 +64,9 @@ class LoginControllerTest {
     @Test
     void trimsEmailBeforeLogin() throws Exception {
         UUID userId = UUID.randomUUID();
-        given(service.login("user@example.com", "password-123")).willReturn(new AccessToken(
-                "Bearer", "signed-token", Instant.parse("2026-08-23T01:15:00Z"), userId
+        given(service.login("user@example.com", "password-123")).willReturn(new AuthTokens(
+                "Bearer", "signed-token", Instant.parse("2026-08-23T01:15:00Z"),
+                "refresh-token", Instant.parse("2026-09-06T01:00:00Z"), userId
         ));
 
         mockMvc.perform(post("/api/v1/auth/login")

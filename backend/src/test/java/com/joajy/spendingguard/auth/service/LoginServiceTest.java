@@ -13,7 +13,10 @@ import com.joajy.spendingguard.auth.service.exception.UnverifiedEmailException;
 import com.joajy.spendingguard.auth.service.model.LoginAccount;
 import com.joajy.spendingguard.auth.service.port.IssueAccessTokenPort;
 import com.joajy.spendingguard.auth.service.port.LoadLoginAccountPort;
+import com.joajy.spendingguard.auth.service.port.RefreshTokenStore;
 import com.joajy.spendingguard.auth.service.result.AccessToken;
+import com.joajy.spendingguard.auth.service.result.AuthTokens;
+import com.joajy.spendingguard.auth.service.result.RefreshToken;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -28,10 +31,12 @@ class LoginServiceTest {
     private final LoadLoginAccountPort accounts = mock(LoadLoginAccountPort.class);
     private final VerifyPasswordPort passwords = mock(VerifyPasswordPort.class);
     private final IssueAccessTokenPort tokens = mock(IssueAccessTokenPort.class);
+    private final RefreshTokenStore refreshTokens = mock(RefreshTokenStore.class);
     private final LoginService service = new LoginService(
             accounts,
             passwords,
             tokens,
+            refreshTokens,
             new EmailNormalizer(),
             Clock.fixed(NOW, ZoneOffset.UTC)
     );
@@ -40,13 +45,15 @@ class LoginServiceTest {
     void issuesTokenForVerifiedAccountAndCorrectPassword() {
         var account = new LoginAccount(USER_ID, "user@example.com", "hash", true);
         var expected = new AccessToken("Bearer", "token", NOW.plusSeconds(900), USER_ID);
+        var expectedRefresh = new RefreshToken("refresh-token", NOW.plusSeconds(1209600));
         given(accounts.findByEmail("user@example.com")).willReturn(Optional.of(account));
         given(passwords.matches("password-123", "hash")).willReturn(true);
         given(tokens.issue(USER_ID, "user@example.com", NOW)).willReturn(expected);
+        given(refreshTokens.create(USER_ID, NOW)).willReturn(expectedRefresh);
 
         var result = service.login(" User@Example.com ", "password-123");
 
-        assertThat(result).isEqualTo(expected);
+        assertThat(result).isEqualTo(AuthTokens.from(expected, expectedRefresh));
     }
 
     @Test

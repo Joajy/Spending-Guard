@@ -24,7 +24,7 @@ class JwtAccessTokenIssuerTest {
 
     private static final String SECRET = "test-secret-key-with-at-least-32-bytes";
     private static final JwtSecurityProperties PROPERTIES = new JwtSecurityProperties(
-            "https://spending-guard.local", SECRET, Duration.ofMinutes(15)
+            "https://spending-guard.local", SECRET, Duration.ofMinutes(15), Duration.ofDays(14)
     );
     private final SecretKey key = new SecretKeySpec(
             SECRET.getBytes(StandardCharsets.UTF_8), "HmacSHA256"

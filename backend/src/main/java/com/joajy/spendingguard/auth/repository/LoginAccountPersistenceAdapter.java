@@ -1,6 +1,7 @@
 package com.joajy.spendingguard.auth.repository;
 
 import java.util.Optional;
+import java.util.UUID;
 
 import com.joajy.spendingguard.account.repository.UserAccountJpaRepository;
 import com.joajy.spendingguard.auth.service.model.LoginAccount;
@@ -18,11 +19,20 @@ class LoginAccountPersistenceAdapter implements LoadLoginAccountPort {
 
     @Override
     public Optional<LoginAccount> findByEmail(String normalizedEmail) {
-        return repository.findByEmail(normalizedEmail).map(account -> new LoginAccount(
+        return repository.findByEmail(normalizedEmail).map(this::toLoginAccount);
+    }
+
+    @Override
+    public Optional<LoginAccount> findById(UUID userId) {
+        return repository.findById(userId).map(this::toLoginAccount);
+    }
+
+    private LoginAccount toLoginAccount(com.joajy.spendingguard.account.repository.UserAccountEntity account) {
+        return new LoginAccount(
                 account.getId(),
                 account.getEmail(),
                 account.getPasswordHash(),
                 account.getEmailVerifiedAt() != null
-        ));
+        );
     }
 }

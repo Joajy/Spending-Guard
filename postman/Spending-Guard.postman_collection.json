@@ -15,6 +15,10 @@
     {
       "key": "accessToken",
       "value": ""
+    },
+    {
+      "key": "refreshToken",
+      "value": ""
     }
   ],
   "item": [
@@ -124,7 +128,20 @@
       },
       "event": [{"listen": "test", "script": {"exec": [
         "pm.test('200 OK', () => pm.response.to.have.status(200));",
-        "pm.test('Bearer 토큰을 발급한다', () => { const body=pm.response.json(); pm.expect(body.tokenType).to.eql('Bearer'); pm.expect(body.userId).to.eql(pm.collectionVariables.get('userId')); pm.collectionVariables.set('accessToken', body.accessToken); });"
+        "pm.test('Access Token과 Refresh Token을 발급한다', () => { const body=pm.response.json(); pm.expect(body.tokenType).to.eql('Bearer'); pm.expect(body.userId).to.eql(pm.collectionVariables.get('userId')); pm.expect(body.refreshToken).to.be.a('string').and.not.empty; pm.collectionVariables.set('accessToken', body.accessToken); pm.collectionVariables.set('refreshToken', body.refreshToken); });"
+      ]}}]
+    },
+    {
+      "name": "인증 토큰 재발급",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {"mode": "raw", "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"},
+        "url": "{{baseUrl}}/api/v1/auth/refresh"
+      },
+      "event": [{"listen": "test", "script": {"exec": [
+        "pm.test('200 OK', () => pm.response.to.have.status(200));",
+        "pm.test('토큰을 회전한다', () => { const previous=pm.collectionVariables.get('refreshToken'); const body=pm.response.json(); pm.expect(body.refreshToken).not.to.eql(previous); pm.collectionVariables.set('accessToken', body.accessToken); pm.collectionVariables.set('refreshToken', body.refreshToken); });"
       ]}}]
     },
     {
@@ -446,6 +463,20 @@
           }
         }
       ]
+    },
+    {
+      "name": "로그아웃",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {"mode": "raw", "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"},
+        "url": "{{baseUrl}}/api/v1/auth/logout"
+      },
+      "event": [{"listen": "test", "script": {"exec": [
+        "pm.test('204 No Content', () => pm.response.to.have.status(204));",
+        "pm.collectionVariables.unset('accessToken');",
+        "pm.collectionVariables.unset('refreshToken');"
+      ]}}]
     }
   ]
 }

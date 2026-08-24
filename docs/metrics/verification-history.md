@@ -153,6 +153,33 @@ Artifact는 보존 기간이 지나면 내려받을 수 없으므로 실행 결�
 
 증빙: [GitHub Actions 실행 결과](https://github.com/Joajy/Spending-Guard/actions/runs/32645021492)
 
+### Refresh Token 재발급과 로그아웃
+
+기준: `feat/token-lifecycle`, Backend CI #71, 2026-08-24
+
+| 구분 | 결과 |
+|---|---:|
+| 백엔드 테스트 | 167/167 통과 |
+| 테스트 실패·오류·건너뜀 | 0/0/0 |
+| 라인 커버리지 | 90.63% |
+| 브랜치 커버리지 | 75.42% |
+| Postman 요청 | 22/22 성공 |
+| Postman assertion | 45/45 통과 |
+| Postman 평균 응답 시간 | 140.73ms |
+
+다음 토큰 수명주기와 보안 경계를 검증했다.
+
+- 로그인 시 15분 Access Token과 14일 Refresh Token을 함께 발급한다.
+- Refresh Token 원문은 저장하지 않고 SHA-256 해시만 PostgreSQL에 보관한다.
+- 재발급 시 기존 토큰을 폐기하고 새 토큰으로 회전해 같은 값의 재사용을 거부한다.
+- 비관적 락으로 동일 Refresh Token의 동시 사용이 중복 발급으로 이어지지 않게 한다.
+- 로그아웃은 토큰 존재 여부와 관계없이 204를 반환해 유효성 추측을 막는다.
+- 토큰 테이블에는 이메일을 중복 저장하지 않고 사용자 식별자만 보관한다.
+
+첫 원격 실행에서는 `token_hash`의 Flyway 타입과 JPA 매핑이 달라 애플리케이션 기동이 실패했다. 타입을 일치시킨 뒤 백엔드 테스트는 통과했지만, 로그인 서비스의 조회 전용 트랜잭션 때문에 Refresh Token이 flush되지 않아 Postman 재발급이 401을 반환했다. 쓰기 트랜잭션으로 수정하고 로그인 직후 실제 DB 토큰을 회전하는 통합 테스트를 추가한 뒤 전체 검증을 통과했다.
+
+증빙: [GitHub Actions 실행 결과](https://github.com/Joajy/Spending-Guard/actions/runs/32735265418), [원인과 해결 이력](https://github.com/Joajy/Spending-Guard/issues/25)
+
 ## 수치 해석 기준
 
 - `100% 파서 정답률`은 고정된 25건의 회귀 데이터셋에 대한 결과다. 금융 알림 전체나 운영 환경의 일반 정확도를 의미하지 않는다.
@@ -167,7 +194,7 @@ Artifact는 보존 기간이 지나면 내려받을 수 없으므로 실행 결�
 - Testcontainers 기반 PostgreSQL과 Embedded Kafka를 사용하는 자동 검증 환경을 구성했다.
 - Kafka 중복 전달 상황에서 데이터베이스 고유 제약과 원자적 INSERT를 이용해 중복 업무 쓰기 0건을 확인했다.
 - 8개 스레드의 동시 재전달에서 최초 처리 1건과 중복 판정 7건으로 일관된 결과를 확인했다.
-- 현재 회귀 범위에서 백엔드 테스트 159건과 Postman assertion 42건을 모두 통과했다.
+- 현재 회귀 범위에서 백엔드 테스트 167건과 Postman assertion 45건을 모두 통과했다.
 - 같은 이메일의 8개 동시 등록에서 계정 1건만 저장되고 나머지 7건은 중복으로 처리됐다.
 - 회원 비밀번호를 BCrypt work factor 12로 해시하고 API와 데이터베이스에 평문을 남기지 않는 경계를 검증했다.
 - 접수 후 반환된 이벤트 식별자를 이용해 비동기 상태를 다시 조회하는 API 흐름을 6개 Postman 요청으로 검증했다.

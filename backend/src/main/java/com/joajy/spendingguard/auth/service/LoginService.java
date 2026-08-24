@@ -8,7 +8,8 @@ import com.joajy.spendingguard.auth.service.exception.InvalidCredentialsExceptio
 import com.joajy.spendingguard.auth.service.exception.UnverifiedEmailException;
 import com.joajy.spendingguard.auth.service.port.IssueAccessTokenPort;
 import com.joajy.spendingguard.auth.service.port.LoadLoginAccountPort;
-import com.joajy.spendingguard.auth.service.result.AccessToken;
+import com.joajy.spendingguard.auth.service.port.RefreshTokenStore;
+import com.joajy.spendingguard.auth.service.result.AuthTokens;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +20,7 @@ public class LoginService {
     private final LoadLoginAccountPort loadLoginAccountPort;
     private final VerifyPasswordPort verifyPasswordPort;
     private final IssueAccessTokenPort issueAccessTokenPort;
+    private final RefreshTokenStore refreshTokenStore;
     private final EmailNormalizer emailNormalizer;
     private final Clock clock;
 
@@ -26,18 +28,20 @@ public class LoginService {
             LoadLoginAccountPort loadLoginAccountPort,
             VerifyPasswordPort verifyPasswordPort,
             IssueAccessTokenPort issueAccessTokenPort,
+            RefreshTokenStore refreshTokenStore,
             EmailNormalizer emailNormalizer,
             Clock clock
     ) {
         this.loadLoginAccountPort = loadLoginAccountPort;
         this.verifyPasswordPort = verifyPasswordPort;
         this.issueAccessTokenPort = issueAccessTokenPort;
+        this.refreshTokenStore = refreshTokenStore;
         this.emailNormalizer = emailNormalizer;
         this.clock = clock;
     }
 
-    @Transactional(readOnly = true)
-    public AccessToken login(String email, String password) {
+    @Transactional
+    public AuthTokens login(String email, String password) {
         var account = loadLoginAccountPort.findByEmail(emailNormalizer.normalize(email))
                 .orElseThrow(InvalidCredentialsException::new);
         if (!verifyPasswordPort.matches(password, account.passwordHash())) {
@@ -46,6 +50,9 @@ public class LoginService {
         if (!account.emailVerified()) {
             throw new UnverifiedEmailException();
         }
-        return issueAccessTokenPort.issue(account.userId(), account.email(), clock.instant());
+        var issuedAt = clock.instant();
+        var accessToken = issueAccessTokenPort.issue(account.userId(), account.email(), issuedAt);
+        var refreshToken = refreshTokenStore.create(account.userId(), issuedAt);
+        return AuthTokens.from(accessToken, refreshToken);
     }
 }
