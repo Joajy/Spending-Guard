@@ -2,6 +2,7 @@ package com.joajy.spendingguard.spendevent.controller.exception;
 
 import com.joajy.spendingguard.spendevent.controller.SpendEventController;
 import com.joajy.spendingguard.spendevent.service.exception.DuplicateSpendEventException;
+import com.joajy.spendingguard.spendevent.service.exception.InvalidSpendEventQueryException;
 import com.joajy.spendingguard.spendevent.service.exception.SpendEventNotFoundException;
 import com.joajy.spendingguard.spendevent.service.exception.SpendEventOwnerNotFoundException;
 import org.springframework.http.HttpStatus;
@@ -43,9 +44,17 @@ class SpendEventExceptionHandler {
         return problem(HttpStatus.NOT_FOUND, "Spend event owner not found", exception.getMessage());
     }
 
+    @ExceptionHandler(InvalidSpendEventQueryException.class)
+    ResponseEntity<ProblemDetail> invalidQuery(InvalidSpendEventQueryException exception) {
+        return problem(HttpStatus.BAD_REQUEST, "Invalid query", exception.getMessage());
+    }
+
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-    ResponseEntity<ProblemDetail> handleInvalidPath() {
-        return problem(HttpStatus.BAD_REQUEST, "Invalid request", "eventId 형식을 확인해 주세요.");
+    ResponseEntity<ProblemDetail> handleInvalidPath(MethodArgumentTypeMismatchException exception) {
+        String detail = "eventId".equals(exception.getName())
+                ? "eventId 형식을 확인해 주세요."
+                : exception.getName() + " 값을 확인해 주세요.";
+        return problem(HttpStatus.BAD_REQUEST, "Invalid request", detail);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
