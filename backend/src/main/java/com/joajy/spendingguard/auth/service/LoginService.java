@@ -40,7 +40,7 @@ public class LoginService {
         this.clock = clock;
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public AuthTokens login(String email, String password) {
         var account = loadLoginAccountPort.findByEmail(emailNormalizer.normalize(email))
                 .orElseThrow(InvalidCredentialsException::new);
