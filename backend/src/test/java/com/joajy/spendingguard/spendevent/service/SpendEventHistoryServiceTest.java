@@ -137,7 +137,8 @@ class SpendEventHistoryServiceTest {
                 "PAYMENT",
                 "SHOPPING",
                 false,
-                "LOW"
+                "LOW",
+                0
         );
     }
 }

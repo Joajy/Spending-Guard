@@ -41,14 +41,17 @@ class SpendEventQueryPersistenceAdapter implements LoadSpendEventDetailPort, Loa
                    parse.transaction_type,
                    parse.status AS parse_status,
                    parse.review_reason,
-                   parse.category,
-                   parse.fixed_cost,
-                   parse.risk_level,
-                   parse.risk_reason,
+                   COALESCE(category_override.category, parse.category) AS category,
+                   COALESCE(category_override.fixed_cost, parse.fixed_cost) AS fixed_cost,
+                   COALESCE(category_override.risk_level, parse.risk_level) AS risk_level,
+                   COALESCE(category_override.risk_reason, parse.risk_reason) AS risk_reason,
+                   COALESCE(category_override.version, 0) AS category_version,
                    parse.parser_version,
                    parse.parsed_at
               FROM raw_spend_event raw_event
               LEFT JOIN fast_parse_result parse ON parse.raw_event_id = raw_event.id
+              LEFT JOIN spend_category_override category_override
+                ON category_override.spend_event_id = raw_event.id
              WHERE raw_event.user_id = :userId
                AND raw_event.id = :eventId
             """;
@@ -89,11 +92,14 @@ class SpendEventQueryPersistenceAdapter implements LoadSpendEventDetailPort, Loa
                        COALESCE(raw_event.occurred_at, raw_event.received_at) AS transaction_at,
                        parse.amount,
                        parse.transaction_type,
-                       parse.category,
-                       parse.fixed_cost,
-                       parse.risk_level
+                       COALESCE(category_override.category, parse.category) AS category,
+                       COALESCE(category_override.fixed_cost, parse.fixed_cost) AS fixed_cost,
+                       COALESCE(category_override.risk_level, parse.risk_level) AS risk_level,
+                       COALESCE(category_override.version, 0) AS category_version
                   FROM raw_spend_event raw_event
                   LEFT JOIN fast_parse_result parse ON parse.raw_event_id = raw_event.id
+                  LEFT JOIN spend_category_override category_override
+                    ON category_override.spend_event_id = raw_event.id
                  WHERE raw_event.user_id = :userId
                    AND COALESCE(raw_event.occurred_at, raw_event.received_at) >= :from
                    AND COALESCE(raw_event.occurred_at, raw_event.received_at) < :until
@@ -102,7 +108,7 @@ class SpendEventQueryPersistenceAdapter implements LoadSpendEventDetailPort, Loa
             sql.append(" AND raw_event.status = :status");
         }
         if (query.category() != null) {
-            sql.append(" AND parse.category = :category");
+            sql.append(" AND COALESCE(category_override.category, parse.category) = :category");
         }
         if (query.cursorTransactionAt() != null) {
             sql.append("""
@@ -162,7 +168,8 @@ class SpendEventQueryPersistenceAdapter implements LoadSpendEventDetailPort, Loa
                 resultSet.getString("risk_level"),
                 resultSet.getString("risk_reason"),
                 resultSet.getString("parser_version"),
-                instant(resultSet, "parsed_at")
+                instant(resultSet, "parsed_at"),
+                resultSet.getLong("category_version")
         );
     }
 
@@ -177,7 +184,8 @@ class SpendEventQueryPersistenceAdapter implements LoadSpendEventDetailPort, Loa
                 resultSet.getString("transaction_type"),
                 resultSet.getString("category"),
                 resultSet.getObject("fixed_cost", Boolean.class),
-                resultSet.getString("risk_level")
+                resultSet.getString("risk_level"),
+                resultSet.getLong("category_version")
         );
     }
 

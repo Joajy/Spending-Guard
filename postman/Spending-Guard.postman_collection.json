@@ -397,6 +397,32 @@
       ]
     },
     {
+      "name": "카테고리 수정 - 분석 대기",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"},
+          {"key": "Authorization", "value": "Bearer {{accessToken}}"}
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"category\": \"SHOPPING\",\n  \"expectedVersion\": 0\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/users/{{userId}}/spend-events/{{spendEventId}}/category"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('409 Conflict', () => pm.response.to.have.status(409));",
+              "pm.test('분석 완료 후 수정하도록 안내한다', () => pm.expect(pm.response.json().title).to.eql('Category is not editable'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
       "name": "존재하지 않는 소비 이벤트 조회",
       "request": {
         "method": "GET",

@@ -22,7 +22,8 @@ public record FastParseResultResponse(
         String riskLevel,
         String riskReason,
         String parserVersion,
-        Instant parsedAt
+        Instant parsedAt,
+        long categoryVersion
 ) {
 
     static FastParseResultResponse from(FastParseResult result) {
@@ -40,7 +41,8 @@ public record FastParseResultResponse(
                 result.riskLevel(),
                 result.riskReason(),
                 result.parserVersion(),
-                result.parsedAt()
+                result.parsedAt(),
+                result.categoryVersion()
         );
     }
 }

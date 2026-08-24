@@ -17,7 +17,8 @@ public record SpendEventHistoryItemResponse(
         String transactionType,
         String category,
         Boolean fixedCost,
-        String riskLevel
+        String riskLevel,
+        long categoryVersion
 ) {
     static SpendEventHistoryItemResponse from(SpendEventHistoryItem item) {
         return new SpendEventHistoryItemResponse(
@@ -30,7 +31,8 @@ public record SpendEventHistoryItemResponse(
                 item.transactionType(),
                 item.category(),
                 item.fixedCost(),
-                item.riskLevel()
+                item.riskLevel(),
+                item.categoryVersion()
         );
     }
 }

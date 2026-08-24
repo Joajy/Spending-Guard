@@ -125,7 +125,8 @@ class SpendEventControllerTest {
                         "LOW",
                         "NORMAL_PATTERN",
                         "fast-parser-v1",
-                        Instant.parse("2026-08-13T01:31:00Z")
+                        Instant.parse("2026-08-13T01:31:00Z"),
+                        0
                 )
         ));
 
@@ -141,7 +142,8 @@ class SpendEventControllerTest {
                 .andExpect(jsonPath("$.fastParse.category").value("SHOPPING"))
                 .andExpect(jsonPath("$.fastParse.fixedCost").value(false))
                 .andExpect(jsonPath("$.fastParse.riskLevel").value("LOW"))
-                .andExpect(jsonPath("$.fastParse.riskReason").value("NORMAL_PATTERN"));
+                .andExpect(jsonPath("$.fastParse.riskReason").value("NORMAL_PATTERN"))
+                .andExpect(jsonPath("$.fastParse.categoryVersion").value(0));
     }
 
     @Test

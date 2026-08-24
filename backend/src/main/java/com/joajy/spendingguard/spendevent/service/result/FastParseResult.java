@@ -14,6 +14,7 @@ public record FastParseResult(
         String riskLevel,
         String riskReason,
         String parserVersion,
-        Instant parsedAt
+        Instant parsedAt,
+        long categoryVersion
 ) {
 }

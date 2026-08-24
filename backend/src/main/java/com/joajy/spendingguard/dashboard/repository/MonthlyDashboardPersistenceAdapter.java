@@ -19,31 +19,37 @@ import org.springframework.stereotype.Component;
 class MonthlyDashboardPersistenceAdapter implements MonthlyDashboardQuery {
 
     private static final String CATEGORY_SPENDING = """
-            SELECT parse.category,
+            SELECT COALESCE(category_override.category, parse.category) AS category,
                    SUM(parse.amount)::BIGINT AS amount,
                    COUNT(*) AS transaction_count
               FROM raw_spend_event event
               JOIN fast_parse_result parse ON parse.raw_event_id = event.id
+              LEFT JOIN spend_category_override category_override
+                ON category_override.spend_event_id = event.id
              WHERE event.user_id = :userId
                AND event.occurred_at >= :from
                AND event.occurred_at < :until
                AND parse.status = 'PARSED'
                AND parse.transaction_type = 'PAYMENT'
-             GROUP BY parse.category
-             ORDER BY amount DESC, parse.category
+             GROUP BY COALESCE(category_override.category, parse.category)
+             ORDER BY amount DESC, category
             """;
 
     private static final String RISK_COUNTS = """
-            SELECT parse.risk_level, COUNT(*) AS risk_count
+            SELECT COALESCE(category_override.risk_level, parse.risk_level) AS risk_level,
+                   COUNT(*) AS risk_count
               FROM raw_spend_event event
               JOIN fast_parse_result parse ON parse.raw_event_id = event.id
+              LEFT JOIN spend_category_override category_override
+                ON category_override.spend_event_id = event.id
              WHERE event.user_id = :userId
                AND event.occurred_at >= :from
                AND event.occurred_at < :until
                AND parse.status = 'PARSED'
                AND parse.transaction_type = 'PAYMENT'
-             GROUP BY parse.risk_level
-             ORDER BY CASE parse.risk_level WHEN 'HIGH' THEN 1 WHEN 'MEDIUM' THEN 2 ELSE 3 END
+             GROUP BY COALESCE(category_override.risk_level, parse.risk_level)
+             ORDER BY CASE COALESCE(category_override.risk_level, parse.risk_level)
+                      WHEN 'HIGH' THEN 1 WHEN 'MEDIUM' THEN 2 ELSE 3 END
             """;
 
     private final JdbcClient jdbcClient;
