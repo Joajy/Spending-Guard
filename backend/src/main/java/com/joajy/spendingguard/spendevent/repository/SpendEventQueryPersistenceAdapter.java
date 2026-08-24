@@ -4,6 +4,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -118,8 +119,8 @@ class SpendEventQueryPersistenceAdapter implements LoadSpendEventDetailPort, Loa
 
         JdbcClient.StatementSpec statement = jdbcClient.sql(sql.toString())
                 .param("userId", query.userId())
-                .param("from", query.from())
-                .param("until", query.until())
+                .param("from", query.from().atOffset(ZoneOffset.UTC))
+                .param("until", query.until().atOffset(ZoneOffset.UTC))
                 .param("limit", query.limit());
         if (query.status() != null) {
             statement = statement.param("status", query.status().name());
@@ -129,7 +130,7 @@ class SpendEventQueryPersistenceAdapter implements LoadSpendEventDetailPort, Loa
         }
         if (query.cursorTransactionAt() != null) {
             statement = statement
-                    .param("cursorAt", query.cursorTransactionAt())
+                    .param("cursorAt", query.cursorTransactionAt().atOffset(ZoneOffset.UTC))
                     .param("cursorId", query.cursorEventId());
         }
         return statement.query(this::mapHistoryItem).list();

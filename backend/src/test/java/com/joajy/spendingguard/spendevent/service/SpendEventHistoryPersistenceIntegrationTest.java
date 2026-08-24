@@ -1,6 +1,7 @@
 package com.joajy.spendingguard.spendevent.service;
 
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.time.YearMonth;
 import java.util.UUID;
 
@@ -150,8 +151,8 @@ class SpendEventHistoryPersistenceIntegrationTest {
                 .param("id", id)
                 .param("email", email)
                 .param("passwordHash", "integration-test-password-hash")
-                .param("createdAt", Instant.parse("2026-08-01T00:00:00Z"))
-                .param("verifiedAt", Instant.parse("2026-08-01T00:01:00Z"))
+                .param("createdAt", Instant.parse("2026-08-01T00:00:00Z").atOffset(ZoneOffset.UTC))
+                .param("verifiedAt", Instant.parse("2026-08-01T00:01:00Z").atOffset(ZoneOffset.UTC))
                 .update();
     }
 }
