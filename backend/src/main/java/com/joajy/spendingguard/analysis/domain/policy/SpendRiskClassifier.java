@@ -25,7 +25,16 @@ public class SpendRiskClassifier {
             TransactionType transactionType,
             Instant occurredAt
     ) {
-        SpendCategory category = category(message);
+        return classify(category(message), amount, transactionType, occurredAt);
+    }
+
+    /** 사용자가 수정한 카테고리를 기준으로 파생 위험 신호를 다시 계산한다. */
+    public SpendRiskAssessment classify(
+            SpendCategory category,
+            BigDecimal amount,
+            TransactionType transactionType,
+            Instant occurredAt
+    ) {
         boolean fixedCost = category == SpendCategory.SUBSCRIPTION;
         if (transactionType != TransactionType.PAYMENT) {
             return new SpendRiskAssessment(category, fixedCost, RiskLevel.LOW, "NON_PAYMENT");

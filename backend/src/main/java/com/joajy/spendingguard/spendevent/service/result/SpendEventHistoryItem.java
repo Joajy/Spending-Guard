@@ -15,6 +15,7 @@ public record SpendEventHistoryItem(
         String transactionType,
         String category,
         Boolean fixedCost,
-        String riskLevel
+        String riskLevel,
+        long categoryVersion
 ) {
 }

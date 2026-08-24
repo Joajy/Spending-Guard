@@ -60,7 +60,8 @@ class SpendEventHistoryControllerTest {
                         "PAYMENT",
                         "SHOPPING",
                         false,
-                        "LOW"
+                        "LOW",
+                        0
                 )),
                 "next-page",
                 true
@@ -75,6 +76,7 @@ class SpendEventHistoryControllerTest {
                 .andExpect(jsonPath("$.items[0].displayText").value("쿠팡 **,***원 결제"))
                 .andExpect(jsonPath("$.items[0].currency").value("KRW"))
                 .andExpect(jsonPath("$.items[0].category").value("SHOPPING"))
+                .andExpect(jsonPath("$.items[0].categoryVersion").value(0))
                 .andExpect(jsonPath("$.nextCursor").value("next-page"))
                 .andExpect(jsonPath("$.hasNext").value(true));
 
