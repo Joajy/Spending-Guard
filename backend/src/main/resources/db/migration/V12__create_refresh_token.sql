@@ -1,7 +1,7 @@
 CREATE TABLE refresh_token (
     id UUID PRIMARY KEY,
     user_id UUID NOT NULL,
-    token_hash CHAR(64) NOT NULL,
+    token_hash VARCHAR(64) NOT NULL,
     created_at TIMESTAMPTZ NOT NULL,
     expires_at TIMESTAMPTZ NOT NULL,
     revoked_at TIMESTAMPTZ,
