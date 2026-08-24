@@ -7,6 +7,7 @@ import java.util.UUID;
 import com.joajy.spendingguard.spendevent.service.exception.DuplicateSpendEventException;
 import com.joajy.spendingguard.spendevent.service.exception.SpendEventNotFoundException;
 import com.joajy.spendingguard.spendevent.service.port.inbound.GetSpendEventUseCase;
+import com.joajy.spendingguard.spendevent.service.port.inbound.ListSpendEventsUseCase;
 import com.joajy.spendingguard.spendevent.service.port.inbound.SubmitSpendEventUseCase;
 import com.joajy.spendingguard.spendevent.service.result.FastParseResult;
 import com.joajy.spendingguard.spendevent.service.result.SpendEventDetail;
@@ -43,6 +44,9 @@ class SpendEventControllerTest {
 
     @MockitoBean
     private GetSpendEventUseCase getSpendEventUseCase;
+
+    @MockitoBean
+    private ListSpendEventsUseCase listSpendEventsUseCase;
 
     @Test
     void acceptsValidSpendEvent() throws Exception {

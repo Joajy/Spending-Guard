@@ -375,6 +375,28 @@
       ]
     },
     {
+      "name": "월별 소비 내역 조회",
+      "request": {
+        "method": "GET",
+        "header": [{"key": "Authorization", "value": "Bearer {{accessToken}}"}],
+        "url": "{{baseUrl}}/api/v1/users/{{userId}}/spend-events?month=2026-08&size=20"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const body = pm.response.json();",
+              "pm.test('200 OK', () => pm.response.to.have.status(200));",
+              "pm.test('접수한 이벤트가 월별 내역에 포함된다', () => pm.expect(body.items.some(item => item.eventId === pm.collectionVariables.get('spendEventId'))).to.eql(true));",
+              "pm.test('저장 전 정제된 표시 문구를 반환한다', () => pm.expect(body.items.find(item => item.eventId === pm.collectionVariables.get('spendEventId')).displayText).to.eql('테스트상점 12,800원 결제'));",
+              "pm.test('커서 페이지 정보를 반환한다', () => { pm.expect(body.hasNext).to.be.a('boolean'); pm.expect(body).to.have.property('nextCursor'); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
       "name": "존재하지 않는 소비 이벤트 조회",
       "request": {
         "method": "GET",
