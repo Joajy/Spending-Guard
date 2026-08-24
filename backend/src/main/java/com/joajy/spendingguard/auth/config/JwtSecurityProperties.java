@@ -5,7 +5,12 @@ import java.time.Duration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties(prefix = "spending-guard.security")
-public record JwtSecurityProperties(String issuer, String secret, Duration accessTokenTtl) {
+public record JwtSecurityProperties(
+        String issuer,
+        String secret,
+        Duration accessTokenTtl,
+        Duration refreshTokenTtl
+) {
     public JwtSecurityProperties {
         if (issuer == null || issuer.isBlank()) {
             throw new IllegalArgumentException("JWT issuer is required");
@@ -15,6 +20,9 @@ public record JwtSecurityProperties(String issuer, String secret, Duration acces
         }
         if (accessTokenTtl == null || accessTokenTtl.isNegative() || accessTokenTtl.isZero()) {
             throw new IllegalArgumentException("JWT access token TTL must be positive");
+        }
+        if (refreshTokenTtl == null || refreshTokenTtl.isNegative() || refreshTokenTtl.isZero()) {
+            throw new IllegalArgumentException("Refresh token TTL must be positive");
         }
     }
 }

@@ -1,6 +1,7 @@
 package com.joajy.spendingguard.auth.controller;
 
 import com.joajy.spendingguard.auth.service.exception.InvalidCredentialsException;
+import com.joajy.spendingguard.auth.service.exception.InvalidRefreshTokenException;
 import com.joajy.spendingguard.auth.service.exception.UnverifiedEmailException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -9,8 +10,13 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-@RestControllerAdvice(assignableTypes = LoginController.class)
+@RestControllerAdvice(assignableTypes = {LoginController.class, TokenLifecycleController.class})
 class LoginExceptionHandler {
+
+    @ExceptionHandler(InvalidRefreshTokenException.class)
+    ResponseEntity<ProblemDetail> invalidRefreshToken(InvalidRefreshTokenException exception) {
+        return problem(HttpStatus.UNAUTHORIZED, "Invalid refresh token", exception.getMessage());
+    }
 
     @ExceptionHandler(InvalidCredentialsException.class)
     ResponseEntity<ProblemDetail> invalidCredentials(InvalidCredentialsException exception) {
