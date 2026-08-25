@@ -513,6 +513,22 @@
       ]
     },
     {
+      "name": "위험 소비 알림 조회",
+      "request": {
+        "method": "GET",
+        "header": [{"key": "Authorization", "value": "Bearer {{accessToken}}"}],
+        "url": "{{baseUrl}}/api/v1/users/{{userId}}/risk-alerts?month=2026-08&minimumLevel=MEDIUM"
+      },
+      "event": [{
+        "listen": "test",
+        "script": {"exec": [
+          "pm.test('200 OK', () => pm.response.to.have.status(200));",
+          "pm.test('위험 알림 페이지 형식을 반환한다', () => { const body=pm.response.json(); pm.expect(body.items).to.be.an('array'); pm.expect(body.hasNext).to.be.a('boolean'); });",
+          "pm.test('LOW 위험은 포함하지 않는다', () => pm.expect(pm.response.json().items.every(item => ['MEDIUM', 'HIGH'].includes(item.riskLevel))).to.eql(true));"
+        ]}
+      }]
+    },
+    {
       "name": "로그아웃",
       "request": {
         "method": "POST",
