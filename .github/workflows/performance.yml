@@ -1,0 +1,175 @@
+name: Transaction ingestion performance
+
+on:
+  pull_request:
+    paths:
+      - "performance/**"
+      - ".github/workflows/performance.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: transaction-ingestion-performance-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ingestion-baseline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: spending_guard
+          POSTGRES_USER: spending_guard
+          POSTGRES_PASSWORD: local_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U spending_guard -d spending_guard"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+      mailpit:
+        image: axllent/mailpit:v1.30.3
+        ports:
+          - 1025:1025
+          - 8025:8025
+    env:
+      DB_URL: jdbc:postgresql://localhost:5432/spending_guard
+      DB_USERNAME: spending_guard
+      DB_PASSWORD: local_password
+      OUTBOX_PUBLISHER_ENABLED: "false"
+      SPEND_EVENT_CONSUMER_ENABLED: "false"
+      MAIL_HOST: localhost
+      MAIL_PORT: "1025"
+      TEST_EMAIL: performance@example.com
+      TEST_PASSWORD: performance-password-123
+      JMETER_VERSION: 5.6.3
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+          cache-dependency-path: backend/*.gradle
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Start API
+        working-directory: backend
+        run: |
+          chmod +x gradlew
+          mkdir -p build/performance
+          ./gradlew bootRun --no-daemon > build/performance/application.log 2>&1 &
+          for attempt in {1..60}; do
+            if curl --fail --silent http://localhost:8080/api/v1/status > /dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          cat build/performance/application.log
+          exit 1
+
+      - name: Prepare verified test account
+        run: |
+          registration=$(curl --fail --silent --show-error \
+            --header "Content-Type: application/json" \
+            --data "{\"email\":\"${TEST_EMAIL}\",\"password\":\"${TEST_PASSWORD}\"}" \
+            http://localhost:8080/api/v1/users)
+          user_id=$(jq --raw-output '.userId' <<< "$registration")
+          test -n "$user_id"
+          test "$user_id" != "null"
+
+          curl --fail --silent --show-error --request POST \
+            "http://localhost:8080/api/v1/users/${user_id}/email-verification" > /dev/null
+
+          verification_code=""
+          for attempt in {1..20}; do
+            message=$(curl --fail --silent \
+              "http://localhost:8025/view/latest.txt?query=to:${TEST_EMAIL}" || true)
+            verification_code=$(grep --only-matching --extended-regexp '\b[0-9]{6}\b' \
+              <<< "$message" | head --lines 1 || true)
+            if [ -n "$verification_code" ]; then
+              break
+            fi
+            sleep 1
+          done
+          test -n "$verification_code"
+
+          curl --fail --silent --show-error --request POST \
+            --header "Content-Type: application/json" \
+            --data "{\"code\":\"${verification_code}\"}" \
+            "http://localhost:8080/api/v1/users/${user_id}/email-verification/confirmation" \
+            > /dev/null
+
+          login=$(curl --fail --silent --show-error \
+            --header "Content-Type: application/json" \
+            --data "{\"email\":\"${TEST_EMAIL}\",\"password\":\"${TEST_PASSWORD}\"}" \
+            http://localhost:8080/api/v1/auth/login)
+          access_token=$(jq --raw-output '.accessToken' <<< "$login")
+          test -n "$access_token"
+          test "$access_token" != "null"
+          echo "::add-mask::$access_token"
+          echo "PERFORMANCE_USER_ID=$user_id" >> "$GITHUB_ENV"
+          echo "PERFORMANCE_ACCESS_TOKEN=$access_token" >> "$GITHUB_ENV"
+
+      - name: Install Apache JMeter
+        run: |
+          curl --fail --silent --show-error --location --retry 3 --remote-name \
+            "https://dlcdn.apache.org/jmeter/binaries/apache-jmeter-${JMETER_VERSION}.tgz"
+          curl --fail --silent --show-error --location --retry 3 --remote-name \
+            "https://downloads.apache.org/jmeter/binaries/apache-jmeter-${JMETER_VERSION}.tgz.sha512"
+          sha512sum --check "apache-jmeter-${JMETER_VERSION}.tgz.sha512"
+          tar --extract --gzip --file "apache-jmeter-${JMETER_VERSION}.tgz"
+
+      - name: Test result summarizer
+        run: python -m unittest discover -s performance/tests -p "test_*.py"
+
+      - name: Run ingestion baseline
+        run: |
+          mkdir -p performance/results
+          "apache-jmeter-${JMETER_VERSION}/bin/jmeter" \
+            -n \
+            -t performance/jmeter/transaction-ingestion.jmx \
+            -l performance/results/results.jtl \
+            -e -o performance/results/html \
+            -JuserId="$PERFORMANCE_USER_ID" \
+            -JaccessToken="$PERFORMANCE_ACCESS_TOKEN" \
+            -Jthreads=10 \
+            -Jiterations=20 \
+            -JrampSeconds=10
+
+      - name: Summarize and enforce baseline
+        if: always()
+        run: |
+          if [ ! -f performance/results/results.jtl ]; then
+            exit 0
+          fi
+          python performance/scripts/summarize_results.py \
+            performance/results/results.jtl \
+            --output performance/results/summary.json \
+            --github-summary "$GITHUB_STEP_SUMMARY" \
+            --max-error-rate 0 \
+            --max-p95 1000
+
+      - name: Upload performance reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: transaction-ingestion-performance
+          path: |
+            performance/results
+            backend/build/performance/application.log
+          if-no-files-found: warn
+          retention-days: 30

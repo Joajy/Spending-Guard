@@ -14,4 +14,7 @@ node_modules/
 .next/
 coverage/
 reports/generated/
+performance/results/
+__pycache__/
+*.pyc
 *.log
