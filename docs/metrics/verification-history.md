@@ -286,17 +286,17 @@ Kafka 발행기와 분석 Consumer는 측정에서 제외했다. 따라서 이 �
 
 ### 로그인 기반 월간 대시보드
 
-기준: `feat/frontend-dashboard-foundation`, Frontend CI #1, 2026-08-27
+기준: `feat/frontend-dashboard-foundation`, Frontend CI #3, 2026-08-27
 
 | 구분 | 결과 |
 |---|---:|
 | 프론트엔드 테스트 파일 | 6/6 통과 |
-| 프론트엔드 테스트 | 20/20 통과 |
+| 프론트엔드 테스트 | 23/23 통과 |
 | 테스트 실패·오류·건너뜀 | 0/0/0 |
-| 라인 커버리지 | 84.06% |
-| 브랜치 커버리지 | 82.85% |
+| 라인 커버리지 | 84.82% |
+| 브랜치 커버리지 | 83.62% |
 | 함수 커버리지 | 87.09% |
-| 구문 커버리지 | 84.06% |
+| 구문 커버리지 | 84.82% |
 | npm 취약점 검사 | high 이상 0건 |
 | 프로덕션 빌드 | 성공 |
 
@@ -309,7 +309,7 @@ Kafka 발행기와 분석 Consumer는 측정에서 제외했다. 따라서 이 �
 - 세션과 대시보드 API가 백엔드 오류를 화면에서 처리할 수 있는 응답으로 변환한다.
 - 숫자, 통화와 비율 표시 형식을 별도 함수로 검증한다.
 
-증빙: [GitHub Actions 실행 결과](https://github.com/Joajy/Spending-Guard/actions/runs/32987863086)
+증빙: [GitHub Actions 실행 결과](https://github.com/Joajy/Spending-Guard/actions/runs/33062334235)
 
 ## 수치 해석 기준
 
