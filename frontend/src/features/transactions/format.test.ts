@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatTransactionAmount, formatTransactionTime } from "./format";
+import { formatFullDateTime, formatTransactionAmount, formatTransactionTime } from "./format";
 
 describe("transaction format", () => {
   it("uses opposite signs for payments and refunds", () => {
@@ -14,5 +14,6 @@ describe("transaction format", () => {
   it("formats transaction time in the service timezone", () => {
     expect(formatTransactionTime("2026-08-27T00:30:00Z")).toContain("09:30");
     expect(formatTransactionTime(null)).toBe("거래 시각 확인 중");
+    expect(formatFullDateTime("invalid")).toBe("시각 확인 중");
   });
 });

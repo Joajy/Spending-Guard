@@ -11,7 +11,9 @@ import {
   RISK_LABELS,
   STATUS_LABELS,
 } from "./format";
+import { TransactionDetailPanel } from "./TransactionDetailPanel";
 import type {
+  CategoryCorrectionResult,
   SpendCategory,
   SpendEventHistoryItem,
   SpendEventHistoryPage,
@@ -35,6 +37,8 @@ export function TransactionHistoryView({ initialMonth }: Props) {
   const [error, setError] = useState("");
   const [loadMoreError, setLoadMoreError] = useState("");
   const [retryKey, setRetryKey] = useState(0);
+  const [selectedItem, setSelectedItem] = useState<SpendEventHistoryItem | null>(null);
+  const [notice, setNotice] = useState("");
   const queryVersion = useRef(0);
 
   useEffect(() => {
@@ -143,6 +147,33 @@ export function TransactionHistoryView({ initialMonth }: Props) {
     setLoadMoreError("");
   }
 
+  function closeDetail() {
+    const eventId = selectedItem?.eventId;
+    setSelectedItem(null);
+    if (eventId) {
+      requestAnimationFrame(() => document.getElementById(`transaction-${eventId}`)?.focus());
+    }
+  }
+
+  function handleCategoryCorrection(result: CategoryCorrectionResult) {
+    const corrected = (item: SpendEventHistoryItem): SpendEventHistoryItem => ({
+      ...item,
+      category: result.category,
+      fixedCost: result.fixedCost,
+      riskLevel: result.riskLevel,
+      categoryVersion: result.version,
+    });
+    if (category && category !== result.category) {
+      setItems((current) => current.filter((item) => item.eventId !== result.eventId));
+      setSelectedItem(null);
+      setNotice("카테고리가 수정되어 현재 필터 목록에서 제외되었습니다.");
+      return;
+    }
+    setItems((current) => current.map((item) => item.eventId === result.eventId ? corrected(item) : item));
+    setSelectedItem((current) => current?.eventId === result.eventId ? corrected(current) : current);
+    setNotice("카테고리와 위험도 정보가 최신 결과로 반영되었습니다.");
+  }
+
   return (
     <main className="dashboard-shell">
       <header className="dashboard-header">
@@ -190,6 +221,8 @@ export function TransactionHistoryView({ initialMonth }: Props) {
           </label>
         </section>
 
+        {notice && <p className="transaction-notice" role="status">{notice}</p>}
+
         {loading && <TransactionSkeleton />}
         {!loading && error && (
           <section className="empty-state" role="alert">
@@ -207,7 +240,12 @@ export function TransactionHistoryView({ initialMonth }: Props) {
         {!loading && !error && items.length > 0 && (
           <section className="transaction-panel" aria-label="소비 내역 목록">
             <ul className="transaction-list">
-              {items.map((item) => <TransactionRow key={item.eventId} item={item} />)}
+              {items.map((item) => (
+                <TransactionRow key={item.eventId} item={item} onOpen={() => {
+                  setNotice("");
+                  setSelectedItem(item);
+                }} />
+              ))}
             </ul>
             {loadMoreError && <p className="load-more-error" role="alert">{loadMoreError}</p>}
             {hasNext && (
@@ -218,29 +256,40 @@ export function TransactionHistoryView({ initialMonth }: Props) {
           </section>
         )}
       </section>
+      {selectedItem && (
+        <TransactionDetailPanel
+          key={selectedItem.eventId}
+          item={selectedItem}
+          onClose={closeDetail}
+          onCorrected={handleCategoryCorrection}
+        />
+      )}
     </main>
   );
 }
 
-function TransactionRow({ item }: { item: SpendEventHistoryItem }) {
+function TransactionRow({ item, onOpen }: { item: SpendEventHistoryItem; onOpen: () => void }) {
   return (
-    <li className="transaction-row">
-      <div className={`transaction-icon ${item.riskLevel?.toLowerCase() ?? "pending"}`} aria-hidden="true" />
-      <div className="transaction-main">
-        <div className="transaction-labels">
-          <span className={`status-chip ${item.status.toLowerCase()}`}>{STATUS_LABELS[item.status]}</span>
-          {item.category && <span>{CATEGORY_LABELS[item.category]}</span>}
-          {item.fixedCost && <span>고정비</span>}
-          {item.riskLevel && item.riskLevel !== "LOW" && (
-            <span className={`risk-chip ${item.riskLevel.toLowerCase()}`}>{RISK_LABELS[item.riskLevel]}</span>
-          )}
+    <li className="transaction-list-item">
+      <button id={`transaction-${item.eventId}`} className="transaction-row" type="button" onClick={onOpen} aria-label={`${item.displayText} 상세 보기`}>
+        <div className={`transaction-icon ${item.riskLevel?.toLowerCase() ?? "pending"}`} aria-hidden="true" />
+        <div className="transaction-main">
+          <div className="transaction-labels">
+            <span className={`status-chip ${item.status.toLowerCase()}`}>{STATUS_LABELS[item.status]}</span>
+            {item.category && <span>{CATEGORY_LABELS[item.category]}</span>}
+            {item.fixedCost && <span>고정비</span>}
+            {item.riskLevel && item.riskLevel !== "LOW" && (
+              <span className={`risk-chip ${item.riskLevel.toLowerCase()}`}>{RISK_LABELS[item.riskLevel]}</span>
+            )}
+          </div>
+          <strong>{item.displayText}</strong>
+          <small>{formatTransactionTime(item.transactionAt)}</small>
         </div>
-        <strong>{item.displayText}</strong>
-        <small>{formatTransactionTime(item.transactionAt)}</small>
-      </div>
-      <strong className={`transaction-amount ${item.transactionType === "PAYMENT" ? "payment" : "credit"}`}>
-        {formatTransactionAmount(item.amount, item.transactionType)}
-      </strong>
+        <strong className={`transaction-amount ${item.transactionType === "PAYMENT" ? "payment" : "credit"}`}>
+          {formatTransactionAmount(item.amount, item.transactionType)}
+        </strong>
+        <span className="transaction-chevron" aria-hidden="true">›</span>
+      </button>
     </li>
   );
 }
