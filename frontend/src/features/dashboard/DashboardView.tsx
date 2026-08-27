@@ -71,6 +71,7 @@ export function DashboardView({ initialMonth }: Props) {
       <header className="dashboard-header">
         <div className="brand-lockup"><span className="brand-mark">SG</span><strong>Spending Guard</strong></div>
         <nav className="header-actions" aria-label="주요 메뉴">
+          <Link href="/alerts">위험 알림</Link>
           <Link href="/transactions">소비 내역</Link>
           <button className="text-button" type="button" onClick={logout}>로그아웃</button>
         </nav>
