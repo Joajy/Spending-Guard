@@ -11,6 +11,14 @@ const dashboard = {
   categories: [],
   risks: [],
 };
+const refreshed = {
+  tokenType: "Bearer",
+  accessToken: "new-access",
+  accessTokenExpiresAt: "2099-08-27T00:15:00Z",
+  refreshToken: "new-refresh",
+  refreshTokenExpiresAt: "2099-09-10T00:00:00Z",
+  userId,
+};
 
 function request(cookies = "sg_user=" + userId + "; sg_access=access-token; sg_refresh=refresh-token", month = "2026-08") {
   return new NextRequest(`http://localhost/api/dashboard?month=${month}`, {
@@ -24,6 +32,15 @@ describe("dashboard BFF route", () => {
   it("rejects invalid months and missing sessions", async () => {
     expect((await GET(request("", "2026-13"))).status).toBe(400);
     expect((await GET(request(""))).status).toBe(401);
+  });
+
+  it("clears a partial session that cannot be refreshed", async () => {
+    const backend = vi.spyOn(globalThis, "fetch");
+    const response = await GET(request(`sg_user=${userId}`));
+
+    expect(response.status).toBe(401);
+    expect(response.headers.getSetCookie().join(";")).toContain("sg_user=");
+    expect(backend).not.toHaveBeenCalled();
   });
 
   it("loads the authenticated user's monthly dashboard", async () => {
@@ -40,15 +57,29 @@ describe("dashboard BFF route", () => {
     );
   });
 
+  it("refreshes before loading when the access cookie has expired", async () => {
+    const backend = vi.spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(new Response(JSON.stringify(refreshed), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify(dashboard), { status: 200 }));
+
+    const response = await GET(request(`sg_user=${userId}; sg_refresh=refresh-token`));
+
+    expect(response.status).toBe(200);
+    expect(backend).toHaveBeenCalledTimes(2);
+    expect(backend).toHaveBeenNthCalledWith(
+      1,
+      "http://localhost:8080/api/v1/auth/refresh",
+      expect.objectContaining({ method: "POST" }),
+    );
+    expect(backend).toHaveBeenNthCalledWith(
+      2,
+      `http://localhost:8080/api/v1/users/${userId}/dashboard?month=2026-08`,
+      expect.objectContaining({ headers: { Authorization: "Bearer new-access" } }),
+    );
+    expect(response.headers.getSetCookie().join(";")).toContain("sg_access=new-access");
+  });
+
   it("rotates tokens and retries once after an expired access token", async () => {
-    const refreshed = {
-      tokenType: "Bearer",
-      accessToken: "new-access",
-      accessTokenExpiresAt: "2099-08-27T00:15:00Z",
-      refreshToken: "new-refresh",
-      refreshTokenExpiresAt: "2099-09-10T00:00:00Z",
-      userId,
-    };
     const backend = vi.spyOn(globalThis, "fetch")
       .mockResolvedValueOnce(new Response(null, { status: 401 }))
       .mockResolvedValueOnce(new Response(JSON.stringify(refreshed), { status: 200 }))
@@ -68,5 +99,16 @@ describe("dashboard BFF route", () => {
     const response = await GET(request());
     expect(response.status).toBe(401);
     expect(response.headers.getSetCookie().join(";")).toContain("sg_access=");
+  });
+
+  it("keeps the session when the refresh service is temporarily unavailable", async () => {
+    vi.spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(new Response(null, { status: 401 }))
+      .mockResolvedValueOnce(new Response(null, { status: 503 }));
+
+    const response = await GET(request());
+
+    expect(response.status).toBe(503);
+    expect(response.headers.getSetCookie()).toEqual([]);
   });
 });

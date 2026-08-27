@@ -19,20 +19,34 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const userId = request.cookies.get(SESSION_COOKIES.user)?.value;
   const accessToken = request.cookies.get(SESSION_COOKIES.access)?.value;
   const refreshToken = request.cookies.get(SESSION_COOKIES.refresh)?.value;
-  if (!userId || !accessToken) {
-    return unauthorized();
+  if (!userId || (!accessToken && !refreshToken)) {
+    return unauthorized(true);
   }
 
   try {
-    let dashboardResponse = await fetchDashboard(userId, month, accessToken);
     let refreshed: AuthTokens | null = null;
+    let dashboardResponse: Response;
 
-    if (dashboardResponse.status === 401 && refreshToken) {
+    if (accessToken) {
+      dashboardResponse = await fetchDashboard(userId, month, accessToken);
+    } else {
+      refreshed = await refreshSession(refreshToken!);
+      if (!refreshed || refreshed.userId !== userId) {
+        return unauthorized(true);
+      }
+      dashboardResponse = await fetchDashboard(userId, month, refreshed.accessToken);
+    }
+
+    if (dashboardResponse.status === 401 && refreshToken && !refreshed) {
       refreshed = await refreshSession(refreshToken);
       if (!refreshed || refreshed.userId !== userId) {
         return unauthorized(true);
       }
       dashboardResponse = await fetchDashboard(userId, month, refreshed.accessToken);
+    }
+
+    if (dashboardResponse.status === 401) {
+      return unauthorized(true);
     }
 
     if (!dashboardResponse.ok) {
@@ -70,6 +84,9 @@ async function refreshSession(refreshToken: string): Promise<AuthTokens | null> 
     body: JSON.stringify({ refreshToken }),
     cache: "no-store",
   });
+  if (response.status >= 500 || response.status === 429) {
+    throw new Error("Token refresh service is unavailable.");
+  }
   return response.ok ? response.json() as Promise<AuthTokens> : null;
 }
 
