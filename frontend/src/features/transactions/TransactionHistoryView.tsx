@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { monthLabel, moveMonth } from "@/features/dashboard/format";
 import {
@@ -35,6 +35,7 @@ export function TransactionHistoryView({ initialMonth }: Props) {
   const [error, setError] = useState("");
   const [loadMoreError, setLoadMoreError] = useState("");
   const [retryKey, setRetryKey] = useState(0);
+  const queryVersion = useRef(0);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -78,6 +79,7 @@ export function TransactionHistoryView({ initialMonth }: Props) {
 
   async function loadMore() {
     if (!nextCursor || loadingMore) return;
+    const requestVersion = queryVersion.current;
     setLoadingMore(true);
     setLoadMoreError("");
     try {
@@ -87,6 +89,7 @@ export function TransactionHistoryView({ initialMonth }: Props) {
         return;
       }
       const body = await response.json() as SpendEventHistoryPage | { message?: string };
+      if (requestVersion !== queryVersion.current) return;
       if (!response.ok) {
         setLoadMoreError("message" in body ? body.message ?? "다음 내역을 불러오지 못했습니다." : "다음 내역을 불러오지 못했습니다.");
         return;
@@ -96,9 +99,13 @@ export function TransactionHistoryView({ initialMonth }: Props) {
       setNextCursor(page.nextCursor);
       setHasNext(page.hasNext);
     } catch {
-      setLoadMoreError("네트워크 연결을 확인한 뒤 다시 시도해 주세요.");
+      if (requestVersion === queryVersion.current) {
+        setLoadMoreError("네트워크 연결을 확인한 뒤 다시 시도해 주세요.");
+      }
     } finally {
-      setLoadingMore(false);
+      if (requestVersion === queryVersion.current) {
+        setLoadingMore(false);
+      }
     }
   }
 
@@ -129,7 +136,9 @@ export function TransactionHistoryView({ initialMonth }: Props) {
   }
 
   function prepareReload() {
+    queryVersion.current += 1;
     setLoading(true);
+    setLoadingMore(false);
     setError("");
     setLoadMoreError("");
   }
