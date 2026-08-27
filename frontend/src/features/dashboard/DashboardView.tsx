@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { MonthlyDashboard } from "./types";
@@ -69,7 +70,10 @@ export function DashboardView({ initialMonth }: Props) {
     <main className="dashboard-shell">
       <header className="dashboard-header">
         <div className="brand-lockup"><span className="brand-mark">SG</span><strong>Spending Guard</strong></div>
-        <button className="text-button" type="button" onClick={logout}>로그아웃</button>
+        <nav className="header-actions" aria-label="주요 메뉴">
+          <Link href="/transactions">소비 내역</Link>
+          <button className="text-button" type="button" onClick={logout}>로그아웃</button>
+        </nav>
       </header>
 
       <section className="dashboard-content">

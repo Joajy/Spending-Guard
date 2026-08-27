@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
-  AuthTokens,
   backendUrl,
   clearSessionCookies,
+  fetchWithSession,
   problemMessage,
-  SESSION_COOKIES,
   setSessionCookies,
 } from "@/lib/server/backend";
 
@@ -16,38 +15,16 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ message: "조회 월을 확인해 주세요." }, { status: 400 });
   }
 
-  const userId = request.cookies.get(SESSION_COOKIES.user)?.value;
-  const accessToken = request.cookies.get(SESSION_COOKIES.access)?.value;
-  const refreshToken = request.cookies.get(SESSION_COOKIES.refresh)?.value;
-  if (!userId || (!accessToken && !refreshToken)) {
-    return unauthorized(true);
-  }
-
   try {
-    let refreshed: AuthTokens | null = null;
-    let dashboardResponse: Response;
-
-    if (accessToken) {
-      dashboardResponse = await fetchDashboard(userId, month, accessToken);
-    } else {
-      refreshed = await refreshSession(refreshToken!);
-      if (!refreshed || refreshed.userId !== userId) {
-        return unauthorized(true);
-      }
-      dashboardResponse = await fetchDashboard(userId, month, refreshed.accessToken);
-    }
-
-    if (dashboardResponse.status === 401 && refreshToken && !refreshed) {
-      refreshed = await refreshSession(refreshToken);
-      if (!refreshed || refreshed.userId !== userId) {
-        return unauthorized(true);
-      }
-      dashboardResponse = await fetchDashboard(userId, month, refreshed.accessToken);
-    }
-
-    if (dashboardResponse.status === 401) {
+    const result = await fetchWithSession(
+      request,
+      (userId, accessToken) => fetchDashboard(userId, month, accessToken),
+    );
+    if (!result.authenticated) {
       return unauthorized(true);
     }
+
+    const dashboardResponse = result.response;
 
     if (!dashboardResponse.ok) {
       return NextResponse.json(
@@ -57,8 +34,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     }
 
     const response = NextResponse.json(await dashboardResponse.json());
-    if (refreshed) {
-      setSessionCookies(response, refreshed);
+    if (result.refreshed) {
+      setSessionCookies(response, result.refreshed);
     }
     return response;
   } catch {
@@ -75,19 +52,6 @@ async function fetchDashboard(userId: string, month: string, accessToken: string
     headers: { Authorization: `Bearer ${accessToken}` },
     cache: "no-store",
   });
-}
-
-async function refreshSession(refreshToken: string): Promise<AuthTokens | null> {
-  const response = await fetch(backendUrl("/api/v1/auth/refresh"), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ refreshToken }),
-    cache: "no-store",
-  });
-  if (response.status >= 500 || response.status === 429) {
-    throw new Error("Token refresh service is unavailable.");
-  }
-  return response.ok ? response.json() as Promise<AuthTokens> : null;
 }
 
 function unauthorized(clear = false): NextResponse {
