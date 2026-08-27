@@ -1,0 +1,95 @@
+name: Frontend CI
+
+on:
+  pull_request:
+    paths:
+      - "frontend/**"
+      - ".github/workflows/frontend-ci.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "frontend/**"
+      - ".github/workflows/frontend-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Audit dependencies
+        run: npm audit --audit-level=high
+
+      - name: Lint source
+        run: npm run lint
+
+      - name: Run tests with coverage
+        run: |
+          mkdir -p reports
+          npm run test:ci
+
+      - name: Build production bundle
+        run: npm run build
+
+      - name: Summarize verification metrics
+        if: always()
+        run: |
+          node <<'JS'
+          const fs = require('fs');
+          const path = require('path');
+
+          const junitPath = path.join('reports', 'vitest-junit.xml');
+          const coveragePath = path.join('coverage', 'coverage-summary.json');
+          if (!fs.existsSync(junitPath) || !fs.existsSync(coveragePath)) process.exit(0);
+
+          const junit = fs.readFileSync(junitPath, 'utf8');
+          const tests = Number(junit.match(/tests="(\d+)"/)?.[1] ?? 0);
+          const failures = Number(junit.match(/failures="(\d+)"/)?.[1] ?? 0);
+          const errors = Number(junit.match(/errors="(\d+)"/)?.[1] ?? 0);
+          const skipped = Number(junit.match(/skipped="(\d+)"/)?.[1] ?? 0);
+          const passed = tests - failures - errors - skipped;
+          const coverage = JSON.parse(fs.readFileSync(coveragePath, 'utf8')).total;
+          const summary = [
+            '## Frontend verification',
+            '',
+            `Tests: ${passed}/${tests - skipped} passed`,
+            `Failures: ${failures}, Errors: ${errors}, Skipped: ${skipped}`,
+            `Line coverage: ${coverage.lines.pct.toFixed(2)}%`,
+            `Branch coverage: ${coverage.branches.pct.toFixed(2)}%`,
+            `Function coverage: ${coverage.functions.pct.toFixed(2)}%`,
+            `Statement coverage: ${coverage.statements.pct.toFixed(2)}%`,
+          ].join('  \n');
+          console.log(summary.replaceAll('  \n', '\n'));
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary + '\n');
+          JS
+
+      - name: Upload frontend reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: frontend-test-reports
+          path: |
+            frontend/reports
+            frontend/coverage
+          if-no-files-found: warn
+          retention-days: 14
