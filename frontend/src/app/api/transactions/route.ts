@@ -68,6 +68,59 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     );
   }
 }
+
+type SubmissionBody = { message?: string; occurredAt?: string | null };
+
+export async function POST(request: NextRequest): Promise<NextResponse> {
+  let body: SubmissionBody;
+  try {
+    body = await request.json() as SubmissionBody;
+  } catch {
+    return badRequest("소비 알림 내용을 확인해 주세요.");
+  }
+
+  const message = body.message?.trim() ?? "";
+  if (!message || message.length > 2_000) {
+    return badRequest("소비 알림은 1~2,000자로 입력해 주세요.");
+  }
+  if (body.occurredAt && Number.isNaN(Date.parse(body.occurredAt))) {
+    return badRequest("결제 발생 시각을 확인해 주세요.");
+  }
+
+  try {
+    const result = await fetchWithSession(request, (userId, accessToken) =>
+      fetch(backendUrl(`/api/v1/users/${userId}/spend-events`), {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          source: "MANUAL_TEXT",
+          message,
+          occurredAt: body.occurredAt || null,
+        }),
+        cache: "no-store",
+      }));
+
+    if (!result.authenticated) return unauthorized();
+    if (!result.response.ok) {
+      return NextResponse.json(
+        { message: await problemMessage(result.response) },
+        { status: result.response.status },
+      );
+    }
+
+    const response = NextResponse.json(await result.response.json(), { status: 202 });
+    if (result.refreshed) setSessionCookies(response, result.refreshed);
+    return response;
+  } catch {
+    return NextResponse.json(
+      { message: "소비 알림을 접수하지 못했습니다. 잠시 후 다시 시도해 주세요." },
+      { status: 503 },
+    );
+  }
+}
 function badRequest(message: string): NextResponse {
   return NextResponse.json({ message }, { status: 400 });
 }

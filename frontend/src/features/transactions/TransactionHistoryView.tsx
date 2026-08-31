@@ -181,6 +181,7 @@ export function TransactionHistoryView({ initialMonth }: Props) {
           <span className="brand-mark">SG</span><strong>Spending Guard</strong>
         </Link>
         <nav className="header-actions" aria-label="주요 메뉴">
+          <Link href="/transactions/new">소비 등록</Link>
           <Link href="/dashboard">대시보드</Link>
           <Link href="/budget">예산</Link>
           <Link href="/alerts">위험 알림</Link>
