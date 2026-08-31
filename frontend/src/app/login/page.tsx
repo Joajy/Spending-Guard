@@ -1,4 +1,5 @@
 import { LoginForm } from "@/features/auth/LoginForm";
+import Link from "next/link";
 
 export default function LoginPage() {
   return (
@@ -26,6 +27,9 @@ export default function LoginPage() {
           <h2 id="login-title">로그인</h2>
           <p className="muted">인증을 마친 계정으로 내 소비 현황을 확인하세요.</p>
           <LoginForm />
+          <p className="auth-link-row">
+            아직 계정이 없나요? <Link href="/register">회원가입</Link>
+          </p>
           <p className="security-note">
             로그인 정보는 브라우저 스크립트에 노출되지 않도록 안전한 쿠키로 관리됩니다.
           </p>
