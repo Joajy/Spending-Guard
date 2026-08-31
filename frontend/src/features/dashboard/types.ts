@@ -17,7 +17,7 @@ export type RiskCount = {
 
 export type MonthlyDashboard = {
   month: string;
-  budget: BudgetSummary;
+  budget: BudgetSummary | null;
   totalSpending: number;
   transactionCount: number;
   categories: CategorySpending[];

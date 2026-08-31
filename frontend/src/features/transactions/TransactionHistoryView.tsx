@@ -182,6 +182,7 @@ export function TransactionHistoryView({ initialMonth }: Props) {
         </Link>
         <nav className="header-actions" aria-label="주요 메뉴">
           <Link href="/dashboard">대시보드</Link>
+          <Link href="/budget">예산</Link>
           <Link href="/alerts">위험 알림</Link>
           <button className="text-button" type="button" onClick={logout}>로그아웃</button>
         </nav>

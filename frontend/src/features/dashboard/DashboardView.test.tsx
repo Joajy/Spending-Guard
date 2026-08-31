@@ -47,6 +47,17 @@ describe("DashboardView", () => {
     expect(screen.getByLabelText("예산 32% 사용")).toBeInTheDocument();
   });
 
+  it("guides a new user to set a budget when none exists", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ ...dashboard, budget: null }), { status: 200 }),
+    );
+
+    render(<DashboardView initialMonth="2026-08" />);
+
+    expect(await screen.findByText("예산을 설정해 주세요.")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /예산 설정하기/ })).toHaveAttribute("href", "/budget?month=2026-08");
+  });
+
   it("reloads the previous month and logs out", async () => {
     const request = vi.spyOn(globalThis, "fetch").mockResolvedValue(
       new Response(JSON.stringify(dashboard), { status: 200 }),

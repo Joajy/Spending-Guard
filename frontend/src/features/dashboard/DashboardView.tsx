@@ -71,6 +71,7 @@ export function DashboardView({ initialMonth }: Props) {
       <header className="dashboard-header">
         <div className="brand-lockup"><span className="brand-mark">SG</span><strong>Spending Guard</strong></div>
         <nav className="header-actions" aria-label="주요 메뉴">
+          <Link href="/budget">예산</Link>
           <Link href="/alerts">위험 알림</Link>
           <Link href="/transactions">소비 내역</Link>
           <button className="text-button" type="button" onClick={logout}>로그아웃</button>
@@ -102,14 +103,23 @@ export function DashboardView({ initialMonth }: Props) {
         {!loading && !error && dashboard && (
           <>
             <section className="summary-grid" aria-label="월간 소비 요약">
-              <article className="summary-card budget-card">
-                <span>남은 예산</span>
-                <strong>{formatWon(dashboard.budget.remainingAmount)}</strong>
-                <div className="progress-track" aria-label={`예산 ${budgetProgress(dashboard.budget.spentAmount, dashboard.budget.limitAmount)}% 사용`}>
-                  <i style={{ width: `${budgetProgress(dashboard.budget.spentAmount, dashboard.budget.limitAmount)}%` }} />
-                </div>
-                <small>{formatWon(dashboard.budget.limitAmount)} 중 {formatWon(dashboard.budget.spentAmount)} 사용</small>
-              </article>
+              {dashboard.budget ? (
+                <article className="summary-card budget-card">
+                  <span>남은 예산</span>
+                  <strong>{formatWon(dashboard.budget.remainingAmount)}</strong>
+                  <div className="progress-track" aria-label={`예산 ${budgetProgress(dashboard.budget.spentAmount, dashboard.budget.limitAmount)}% 사용`}>
+                    <i style={{ width: `${budgetProgress(dashboard.budget.spentAmount, dashboard.budget.limitAmount)}%` }} />
+                  </div>
+                  <small>{formatWon(dashboard.budget.limitAmount)} 중 {formatWon(dashboard.budget.spentAmount)} 사용</small>
+                </article>
+              ) : (
+                <article className="summary-card budget-card budget-card-empty">
+                  <span>월간 예산</span>
+                  <strong>예산을 설정해 주세요.</strong>
+                  <p>한도를 정하면 남은 금액과 소비 속도를 바로 확인할 수 있습니다.</p>
+                  <Link href={`/budget?month=${month}`}>예산 설정하기 →</Link>
+                </article>
+              )}
               <article className="summary-card">
                 <span>총 지출</span>
                 <strong>{formatWon(dashboard.totalSpending)}</strong>
