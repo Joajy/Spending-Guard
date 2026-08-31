@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import static org.mockito.BDDMockito.*;
@@ -37,6 +38,14 @@ class MonthlyBudgetControllerTest {
     }
     @Test void returnsConflictForStaleVersion() throws Exception {
         given(service.set(USER,MONTH,600_000,0L)).willThrow(new StaleBudgetVersionException());
+        mockMvc.perform(put("/api/v1/users/{userId}/budgets/{month}",USER,"2026-08")
+                .contentType(MediaType.APPLICATION_JSON).content("{\"amount\":600000,\"version\":0}"))
+                .andExpect(status().isConflict()).andExpect(jsonPath("$.title").value("Stale budget version"));
+    }
+    @Test void returnsConflictWhenConcurrentUpdateReachesJpaOptimisticLock() throws Exception {
+        given(service.set(USER,MONTH,600_000,0L)).willThrow(
+                new ObjectOptimisticLockingFailureException(MonthlyBudget.class, UUID.randomUUID())
+        );
         mockMvc.perform(put("/api/v1/users/{userId}/budgets/{month}",USER,"2026-08")
                 .contentType(MediaType.APPLICATION_JSON).content("{\"amount\":600000,\"version\":0}"))
                 .andExpect(status().isConflict()).andExpect(jsonPath("$.title").value("Stale budget version"));
