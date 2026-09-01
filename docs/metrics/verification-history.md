@@ -4,27 +4,27 @@
 
 ## 최신 검증 결과
 
-기준: `feat/user-registration`, Backend CI #35, 2026-08-21
+기준: `chore/full-stack-runtime`, Frontend CI·Backend CI·Full-stack smoke, 2026-09-01
 
 | 구분 | 결과 | 측정 범위 |
 |---|---:|---|
-| 백엔드 테스트 | 94/94 통과 | 단위·Web MVC·PostgreSQL 동시성·Kafka 종단 테스트 |
+| 백엔드 테스트 | 199/199 통과 | 단위·Web MVC·PostgreSQL·Kafka 종단 테스트 |
 | 테스트 실패·오류·건너뜀 | 0/0/0 | Gradle 전체 테스트 결과 |
-| 라인 커버리지 | 93.29% | JaCoCo 대상 애플리케이션 코드 |
-| 브랜치 커버리지 | 78.57% | JaCoCo 대상 애플리케이션 코드 |
+| 백엔드 라인 커버리지 | 92.55% | JaCoCo 대상 애플리케이션 코드 |
+| 백엔드 브랜치 커버리지 | 76.92% | JaCoCo 대상 애플리케이션 코드 |
 | 빠른 파서 정답률 | 25/25, 100.00% | 저장소에 고정한 회귀 데이터셋 |
-| Postman 요청 | 9/9 성공 | 회원 등록·상태 확인·소비 이벤트 시나리오 |
-| Postman assertion | 22/22 통과 | 상태 코드·응답 계약·민감정보 비노출 검증 |
-| Postman 평균 응답 시간 | 84.89ms | BCrypt 회원 등록을 포함한 전체 API 회귀 실행 |
-| 동시 이메일 등록 | 최초 등록 1건, 중복 판정 7건 | 동일 이메일을 8개 스레드에서 저장 |
-| 중복 이벤트 동시 처리 | 최초 처리 1건, 중복 판정 7건 | 동일 이벤트를 8개 스레드에서 처리 |
-| 중복 업무 쓰기 | 0건 | PostgreSQL 고유 제약과 원자적 선점 검증 |
+| 리스크 분류 정답률 | 15/15, 100.00% | 저장소에 고정한 회귀 데이터셋 |
+| Postman 요청 | 25/25 성공 | 인증·예산·소비·알림 API 회귀 시나리오 |
+| Postman assertion | 54/54 통과 | 상태 코드·응답 계약·정합성 검증 |
+| 프론트엔드 테스트 | 129/129 통과 | 화면·상태·BFF·쿠키 경계 테스트 |
+| 프론트엔드 라인·브랜치 커버리지 | 88.19%·83.11% | Vitest coverage 대상 코드 |
+| 전체 서비스 사용자 여정 | 1/1 통과 | 가입부터 대시보드 반영과 로그아웃까지 |
 
 증빙:
 
-- [GitHub Actions 실행 결과](https://github.com/Joajy/Spending-Guard/actions/runs/32423006746)
-- [백엔드 테스트·JaCoCo 보고서](https://github.com/Joajy/Spending-Guard/actions/runs/32423006746/artifacts/9426425978)
-- [Postman 보고서](https://github.com/Joajy/Spending-Guard/actions/runs/32423006746/artifacts/9426395254)
+- [Frontend CI](https://github.com/Joajy/Spending-Guard/actions/runs/33500470630)
+- [Backend CI·Postman](https://github.com/Joajy/Spending-Guard/actions/runs/33500470650)
+- [Full-stack smoke](https://github.com/Joajy/Spending-Guard/actions/runs/33500470629)
 
 Artifact는 보존 기간이 지나면 내려받을 수 없으므로 실행 결과 링크와 핵심 수치를 함께 남긴다.
 
@@ -519,6 +519,40 @@ Kafka 발행기와 분석 Consumer는 측정에서 제외했다. 따라서 이 �
 
 증빙: [GitHub Actions 실행 결과](https://github.com/Joajy/Spending-Guard/actions/runs/33497445127)
 
+### 전체 스택 실행과 사용자 여정
+
+기준: `chore/full-stack-runtime`, Frontend CI·Backend CI·Full-stack smoke, 2026-09-01
+
+| 구분 | 결과 |
+|---|---:|
+| 프론트엔드 테스트 파일 | 24/24 통과 |
+| 프론트엔드 테스트 | 129/129 통과 |
+| 프론트엔드 라인 커버리지 | 88.19% |
+| 프론트엔드 브랜치 커버리지 | 83.11% |
+| 프론트엔드 함수 커버리지 | 86.18% |
+| npm 취약점 검사 | 0건 |
+| 백엔드 테스트 | 199/199 통과 |
+| 백엔드 라인 커버리지 | 92.55% |
+| 백엔드 브랜치 커버리지 | 76.92% |
+| 빠른 파서 회귀 데이터셋 | 25/25 정답 |
+| 위험 분류 회귀 데이터셋 | 15/15 정답 |
+| Postman 요청 | 25/25 성공 |
+| Postman assertion | 54/54 통과 |
+| Smoke 보조 로직 테스트 | 4/4 통과 |
+| 전체 서비스 사용자 여정 | 1/1 통과 |
+
+다음 실행·보안·비동기 처리 경계를 검증했다.
+
+- PostgreSQL, Kafka, Mailpit, 백엔드와 프론트엔드를 Compose 한 번으로 빌드하고 준비 상태까지 확인한다.
+- 브라우저와 같은 프론트엔드 BFF 경로로 회원가입, 이메일 인증, 로그인, 소비 알림 접수, 분석 결과 조회, 월간 대시보드 반영과 로그아웃을 순서대로 실행한다.
+- 개발용 HTTP 환경에서는 명시적인 설정으로 쿠키의 Secure 속성만 해제하고, 배포 환경은 HTTPS와 Secure 쿠키를 기본값으로 유지한다.
+- 선택 입력인 거래 발생 시각이 없는 12,800원 쇼핑 거래도 접수 시각을 기준으로 월간 대시보드에 한 건 반영됨을 확인한다.
+- 전체 여정 최초 검증에서 거래 상세에는 표시되지만 대시보드 집계에서 누락되는 문제를 발견했다. 월 범위 기준을 `occurred_at` 단독 값에서 `occurred_at`이 없을 때 `received_at`을 사용하는 방식으로 수정하고 PostgreSQL 통합 회귀 테스트를 추가했다.
+
+전체 사용자 여정 결과는 금액 12,800원, 카테고리 `SHOPPING`, 대시보드 거래 수 1건으로 통과했다. 실제 외부 SMTP와 금융사 연동이 아니라 Mailpit과 소비 알림 입력 화면을 사용하는 로컬 실행 기준이다.
+
+증빙: [Frontend CI](https://github.com/Joajy/Spending-Guard/actions/runs/33500470630), [Backend CI·Postman](https://github.com/Joajy/Spending-Guard/actions/runs/33500470650), [Full-stack smoke](https://github.com/Joajy/Spending-Guard/actions/runs/33500470629), [원인과 해결 이력](https://github.com/Joajy/Spending-Guard/issues/41)
+
 ## 수치 해석 기준
 
 - `100% 파서 정답률`은 고정된 25건의 회귀 데이터셋에 대한 결과다. 금융 알림 전체나 운영 환경의 일반 정확도를 의미하지 않는다.
@@ -534,12 +568,13 @@ Kafka 발행기와 분석 Consumer는 측정에서 제외했다. 따라서 이 �
 - Testcontainers 기반 PostgreSQL과 Embedded Kafka를 사용하는 자동 검증 환경을 구성했다.
 - Kafka 중복 전달 상황에서 데이터베이스 고유 제약과 원자적 INSERT를 이용해 중복 업무 쓰기 0건을 확인했다.
 - 8개 스레드의 동시 재전달에서 최초 처리 1건과 중복 판정 7건으로 일관된 결과를 확인했다.
-- 현재 회귀 범위에서 프론트엔드 테스트 127건을 모두 통과했다.
+- 현재 회귀 범위에서 프론트엔드 테스트 129건을 모두 통과했다.
 - 같은 이메일의 8개 동시 등록에서 계정 1건만 저장되고 나머지 7건은 중복으로 처리됐다.
 - 회원 비밀번호를 BCrypt work factor 12로 해시하고 API와 데이터베이스에 평문을 남기지 않는 경계를 검증했다.
 - 접수 후 반환된 이벤트 식별자를 이용해 비동기 상태를 다시 조회하는 API 흐름을 6개 Postman 요청으로 검증했다.
 - 빠른 파서는 공개한 25건의 회귀 데이터셋에서 25건을 정확히 분류했다.
 - 동일한 접수 시나리오 200건에서 실패 0건과 p95 17ms를 확인했다.
-- 월간 예산 동시 수정 검증을 포함한 백엔드 테스트 198건과 Postman assertion 54건을 모두 통과했다.
+- 월간 예산 동시 수정과 대시보드 시간 대체 기준을 포함한 백엔드 테스트 199건과 Postman assertion 54건을 모두 통과했다.
+- 다섯 개 서비스를 한 번에 실행한 뒤 가입부터 소비 분석, 대시보드 반영과 로그아웃까지의 사용자 여정을 1건 자동 검증했다.
 
 위 문장은 해당 실행 시점의 사실이다. 표본이 확대되면 최신 결과와 조건으로 갱신한다.

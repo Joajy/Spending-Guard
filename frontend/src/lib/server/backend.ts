@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { secureCookiesEnabled } from "./cookies";
 
 export type AuthTokens = {
   tokenType: string;
@@ -32,7 +33,7 @@ export function setSessionCookies(
   const common = {
     httpOnly: true,
     sameSite: "lax" as const,
-    secure: process.env.NODE_ENV === "production",
+    secure: secureCookiesEnabled(),
     path: "/",
   };
 

@@ -79,6 +79,28 @@ class MonthlyDashboardPersistenceIntegrationTest {
         assertThat(risks).extracting("count").containsExactly(1L, 1L);
     }
 
+    @Test
+    void usesReceivedTimeWhenOptionalOccurredTimeIsMissing() {
+        insertParsedPaymentWithoutOccurredAt(
+                "2026-08-13T03:00:00+09:00",
+                5_000,
+                "DELIVERY",
+                "MEDIUM"
+        );
+        Instant from = YearMonth.of(2026, 8).atDay(1).atStartOfDay(SEOUL).toInstant();
+        Instant until = YearMonth.of(2026, 9).atDay(1).atStartOfDay(SEOUL).toInstant();
+
+        var categories = adapter.findCategorySpending(USER_ID, from, until);
+        var risks = adapter.findRiskCounts(USER_ID, from, until);
+
+        assertThat(categories).extracting("category")
+                .containsExactly("TRANSPORT", "SHOPPING", "DELIVERY");
+        assertThat(categories).extracting("amount")
+                .containsExactly(28_000L, 12_800L, 5_000L);
+        assertThat(risks).extracting("riskLevel")
+                .containsExactly("HIGH", "MEDIUM", "LOW");
+    }
+
     private void insertParsedPayment(
             String occurredAt,
             long amount,
@@ -96,6 +118,34 @@ class MonthlyDashboardPersistenceIntegrationTest {
                         :occurredAt, :occurredAt)
                 """).param("id", eventId).param("userId", USER_ID)
                 .param("dedupe", "dashboard-" + suffix).param("occurredAt", timestamp).update();
+        jdbcClient.sql("""
+                INSERT INTO fast_parse_result
+                    (raw_event_id, amount, transaction_type, status, category, fixed_cost,
+                     risk_level, risk_reason, parser_version, parsed_at)
+                VALUES (:eventId, :amount, 'PAYMENT', 'PARSED', :category, false,
+                        :riskLevel, 'TEST_REASON', 'fast-parser-v1', :parsedAt)
+                """).param("eventId", eventId).param("amount", amount)
+                .param("category", category).param("riskLevel", riskLevel)
+                .param("parsedAt", timestamp).update();
+    }
+
+    private void insertParsedPaymentWithoutOccurredAt(
+            String receivedAt,
+            long amount,
+            String category,
+            String riskLevel
+    ) {
+        UUID eventId = UUID.randomUUID();
+        var timestamp = java.time.OffsetDateTime.parse(receivedAt);
+        jdbcClient.sql("""
+                INSERT INTO raw_spend_event
+                    (id, user_id, source, deduplication_key, sanitized_message, status,
+                     occurred_at, received_at)
+                VALUES (:id, :userId, 'MANUAL_TEXT', :dedupe, '시각 없는 테스트 결제', 'ANALYZING',
+                        NULL, :receivedAt)
+                """).param("id", eventId).param("userId", USER_ID)
+                .param("dedupe", "dashboard-null-time-" + eventId)
+                .param("receivedAt", timestamp).update();
         jdbcClient.sql("""
                 INSERT INTO fast_parse_result
                     (raw_event_id, amount, transaction_type, status, category, fixed_cost,
