@@ -27,8 +27,8 @@ class MonthlyDashboardPersistenceAdapter implements MonthlyDashboardQuery {
               LEFT JOIN spend_category_override category_override
                 ON category_override.spend_event_id = event.id
              WHERE event.user_id = :userId
-               AND event.occurred_at >= :from
-               AND event.occurred_at < :until
+               AND COALESCE(event.occurred_at, event.received_at) >= :from
+               AND COALESCE(event.occurred_at, event.received_at) < :until
                AND parse.status = 'PARSED'
                AND parse.transaction_type = 'PAYMENT'
              GROUP BY COALESCE(category_override.category, parse.category)
@@ -43,8 +43,8 @@ class MonthlyDashboardPersistenceAdapter implements MonthlyDashboardQuery {
               LEFT JOIN spend_category_override category_override
                 ON category_override.spend_event_id = event.id
              WHERE event.user_id = :userId
-               AND event.occurred_at >= :from
-               AND event.occurred_at < :until
+               AND COALESCE(event.occurred_at, event.received_at) >= :from
+               AND COALESCE(event.occurred_at, event.received_at) < :until
                AND parse.status = 'PARSED'
                AND parse.transaction_type = 'PAYMENT'
              GROUP BY COALESCE(category_override.risk_level, parse.risk_level)
