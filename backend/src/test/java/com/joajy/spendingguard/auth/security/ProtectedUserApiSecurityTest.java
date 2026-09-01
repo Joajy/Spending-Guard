@@ -42,6 +42,15 @@ class ProtectedUserApiSecurityTest {
     }
 
     @Test
+    void allowsDeploymentProbesWithoutAuthentication() throws Exception {
+        mockMvc.perform(get("/livez"))
+                .andExpect(status().isNotFound());
+
+        mockMvc.perform(get("/readyz"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
     void allowsTokenOwner() throws Exception {
         given(service.get(USER_ID, YearMonth.of(2026, 8))).willReturn(new MonthlyDashboard(
                 YearMonth.of(2026, 8), null, 0, 0, List.of(), List.of()

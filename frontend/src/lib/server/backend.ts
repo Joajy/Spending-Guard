@@ -21,8 +21,35 @@ export type SessionBackendResult =
   | { authenticated: false };
 
 export function backendUrl(path: string): string {
-  const origin = process.env.BACKEND_API_URL ?? "http://localhost:8080";
-  return `${origin.replace(/\/$/, "")}${path}`;
+  return `${backendOrigin()}${path}`;
+}
+
+function backendOrigin(): string {
+  const configured = process.env.BACKEND_API_URL?.trim();
+  if (!configured) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("BACKEND_API_URL is required in production.");
+    }
+    return "http://localhost:8080";
+  }
+
+  let url: URL;
+  try {
+    url = new URL(configured);
+  } catch {
+    throw new Error("BACKEND_API_URL must be an absolute HTTP(S) origin.");
+  }
+  if (
+    !["http:", "https:"].includes(url.protocol)
+    || url.username
+    || url.password
+    || url.pathname !== "/"
+    || url.search
+    || url.hash
+  ) {
+    throw new Error("BACKEND_API_URL must be an absolute HTTP(S) origin.");
+  }
+  return url.origin;
 }
 
 export function setSessionCookies(
