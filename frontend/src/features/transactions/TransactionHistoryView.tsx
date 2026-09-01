@@ -1,9 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { monthLabel, moveMonth } from "@/features/dashboard/format";
+import { AppHeader } from "@/features/navigation/AppHeader";
 import {
   CATEGORY_LABELS,
   formatTransactionAmount,
@@ -113,12 +113,6 @@ export function TransactionHistoryView({ initialMonth }: Props) {
     }
   }
 
-  async function logout() {
-    await fetch("/api/session", { method: "DELETE" });
-    router.replace("/login");
-    router.refresh();
-  }
-
   function changeMonth(offset: number) {
     prepareReload();
     setMonth((current) => moveMonth(current, offset));
@@ -176,18 +170,7 @@ export function TransactionHistoryView({ initialMonth }: Props) {
 
   return (
     <main className="dashboard-shell">
-      <header className="dashboard-header">
-        <Link className="brand-lockup" href="/dashboard">
-          <span className="brand-mark">SG</span><strong>Spending Guard</strong>
-        </Link>
-        <nav className="header-actions" aria-label="주요 메뉴">
-          <Link href="/transactions/new">소비 등록</Link>
-          <Link href="/dashboard">대시보드</Link>
-          <Link href="/budget">예산</Link>
-          <Link href="/alerts">위험 알림</Link>
-          <button className="text-button" type="button" onClick={logout}>로그아웃</button>
-        </nav>
-      </header>
+      <AppHeader />
 
       <section className="dashboard-content transaction-content">
         <div className="dashboard-title-row">

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { AppHeader } from "@/features/navigation/AppHeader";
 import type { MonthlyDashboard } from "./types";
 import { budgetProgress, formatWon, monthLabel, moveMonth } from "./format";
 
@@ -40,12 +41,6 @@ export function DashboardView({ initialMonth }: Props) {
     return () => controller.abort();
   }, [month, retryKey, router]);
 
-  async function logout() {
-    await fetch("/api/session", { method: "DELETE" });
-    router.replace("/login");
-    router.refresh();
-  }
-
   function changeMonth(offset: number) {
     setLoading(true);
     setError("");
@@ -68,15 +63,7 @@ export function DashboardView({ initialMonth }: Props) {
 
   return (
     <main className="dashboard-shell">
-      <header className="dashboard-header">
-        <div className="brand-lockup"><span className="brand-mark">SG</span><strong>Spending Guard</strong></div>
-        <nav className="header-actions" aria-label="주요 메뉴">
-          <Link href="/budget">예산</Link>
-          <Link href="/alerts">위험 알림</Link>
-          <Link href="/transactions">소비 내역</Link>
-          <button className="text-button" type="button" onClick={logout}>로그아웃</button>
-        </nav>
-      </header>
+      <AppHeader />
 
       <section className="dashboard-content">
         <div className="dashboard-title-row">

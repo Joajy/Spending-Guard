@@ -1,9 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { budgetProgress, formatWon, monthLabel, moveMonth } from "@/features/dashboard/format";
+import { AppHeader } from "@/features/navigation/AppHeader";
 import { formatFullDateTime } from "@/features/transactions/format";
 import { formatBudgetInput, parseBudgetAmount } from "./format";
 import type { MonthlyBudget } from "./types";
@@ -119,12 +119,6 @@ export function MonthlyBudgetView({ initialMonth }: Props) {
     }
   }
 
-  async function logout() {
-    await fetch("/api/session", { method: "DELETE" });
-    router.replace("/login");
-    router.refresh();
-  }
-
   function prepareReload() {
     setLoading(true);
     setError("");
@@ -150,17 +144,7 @@ export function MonthlyBudgetView({ initialMonth }: Props) {
 
   return (
     <main className="dashboard-shell">
-      <header className="dashboard-header">
-        <Link className="brand-lockup" href="/dashboard">
-          <span className="brand-mark">SG</span><strong>Spending Guard</strong>
-        </Link>
-        <nav className="header-actions" aria-label="주요 메뉴">
-          <Link href="/dashboard">대시보드</Link>
-          <Link href="/alerts">위험 알림</Link>
-          <Link href="/transactions">소비 내역</Link>
-          <button className="text-button" type="button" onClick={logout}>로그아웃</button>
-        </nav>
-      </header>
+      <AppHeader />
 
       <section className="dashboard-content budget-content">
         <div className="dashboard-title-row">

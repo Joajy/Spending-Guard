@@ -9,6 +9,7 @@ const router = { replace, refresh };
 
 vi.mock("next/navigation", () => ({
   useRouter: () => router,
+  usePathname: () => "/budget",
 }));
 
 const budget = {
