@@ -10,6 +10,7 @@ const router = { replace, refresh };
 
 vi.mock("next/navigation", () => ({
   useRouter: () => router,
+  usePathname: () => "/transactions",
 }));
 
 const payment: SpendEventHistoryItem = {

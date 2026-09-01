@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { AppHeader } from "@/features/navigation/AppHeader";
 import type { SpendEventDetail, SpendEventStatus } from "./types";
 
 type AcceptedEvent = { eventId: string; status: SpendEventStatus; receivedAt: string };
@@ -95,12 +96,7 @@ export function SpendEventSubmissionView() {
 
   return (
     <div className="dashboard-shell">
-      <header className="dashboard-header">
-        <Link className="brand-lockup" href="/dashboard"><span className="brand-mark">SG</span><strong>Spending Guard</strong></Link>
-        <nav className="header-actions" aria-label="주요 메뉴">
-          <Link href="/dashboard">대시보드</Link><Link href="/transactions">소비 내역</Link><Link href="/alerts">위험 알림</Link>
-        </nav>
-      </header>
+      <AppHeader />
       <main className="dashboard-content ingestion-content">
         <div className="dashboard-title-row">
           <div><p className="eyebrow">ADD TRANSACTION</p><h1>소비 알림 등록</h1><p className="muted">카드나 은행에서 받은 알림을 붙여 넣으면 소비 정보와 위험 신호를 분석합니다.</p></div>

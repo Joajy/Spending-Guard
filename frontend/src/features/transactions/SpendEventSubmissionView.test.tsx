@@ -6,7 +6,10 @@ import { SpendEventSubmissionView } from "./SpendEventSubmissionView";
 const replace = vi.fn();
 const refresh = vi.fn();
 
-vi.mock("next/navigation", () => ({ useRouter: () => ({ replace, refresh }) }));
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ replace, refresh }),
+  usePathname: () => "/transactions/new",
+}));
 
 const receipt = {
   eventId: "a0e6cfcc-7d18-43f1-ae90-a60eb83b005c",
