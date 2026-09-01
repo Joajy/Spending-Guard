@@ -72,6 +72,27 @@ def wait_for_analysis(client: ApiClient, event_id: str, timeout: int = 40):
     raise SmokeFailure("spend event analysis did not finish before timeout")
 
 
+def wait_for_dashboard(
+    client: ApiClient,
+    month: str,
+    minimum_count: int,
+    minimum_spending: int,
+    attempts: int = 40,
+    interval: float = 1,
+):
+    last_dashboard = None
+    for attempt in range(attempts):
+        last_dashboard = client.request(f"/api/dashboard?month={month}")
+        if (
+            last_dashboard.get("transactionCount", 0) >= minimum_count
+            and last_dashboard.get("totalSpending", 0) >= minimum_spending
+        ):
+            return last_dashboard
+        if attempt + 1 < attempts:
+            time.sleep(interval)
+    raise SmokeFailure(f"dashboard did not reflect the event: {last_dashboard}")
+
+
 def run():
     frontend = os.getenv("FRONTEND_ORIGIN", "http://localhost:3000")
     mailpit = os.getenv("MAILPIT_ORIGIN", "http://localhost:8025")
@@ -96,9 +117,7 @@ def run():
         raise SmokeFailure(f"unexpected analysis result: {parsed}")
 
     month = datetime.now(ZoneInfo("Asia/Seoul")).strftime("%Y-%m")
-    dashboard = client.request(f"/api/dashboard?month={month}")
-    if dashboard.get("transactionCount", 0) < 1 or dashboard.get("totalSpending", 0) < 12800:
-        raise SmokeFailure(f"dashboard did not reflect the event: {dashboard}")
+    dashboard = wait_for_dashboard(client, month, minimum_count=1, minimum_spending=12800)
 
     client.request("/api/session", "DELETE", expected=(204,))
     print(json.dumps({
