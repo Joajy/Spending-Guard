@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { secureCookiesEnabled } from "./cookies";
 
 export const ONBOARDING_COOKIE = "sg_onboarding_user";
 
@@ -10,7 +11,7 @@ export function setOnboardingCookie(response: NextResponse, userId: string): voi
   response.cookies.set(ONBOARDING_COOKIE, userId, {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure: secureCookiesEnabled(),
     path: "/",
     maxAge: 30 * 60,
   });
