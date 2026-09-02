@@ -60,9 +60,18 @@ class JwtAccessTokenIssuerTest {
     @Test
     void rejectsTamperedSignature() {
         var token = issuer.issue(UUID.randomUUID(), "user@example.com", Instant.now());
-        String tampered = token.accessToken().substring(0, token.accessToken().length() - 1) + "x";
+        String tampered = tamperSignature(token.accessToken());
 
+        assertThat(tampered).isNotEqualTo(token.accessToken());
         assertThatThrownBy(() -> decoder().decode(tampered)).isInstanceOf(JwtException.class);
+    }
+
+    private String tamperSignature(String token) {
+        int signatureStart = token.lastIndexOf('.') + 1;
+        char replacement = token.charAt(signatureStart) == 'A' ? 'B' : 'A';
+        return token.substring(0, signatureStart)
+                + replacement
+                + token.substring(signatureStart + 1);
     }
 
     private NimbusJwtDecoder decoder() {
