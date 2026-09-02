@@ -26,6 +26,10 @@ class ContainerWorkflowContractTest(unittest.TestCase):
         self.assertIn("^v[0-9]+\\.[0-9]+\\.[0-9]+$", self.workflow)
         self.assertIn("git merge-base --is-ancestor", self.workflow)
         self.assertIn("type=semver,pattern={{version}}", self.workflow)
+        self.assertIn(
+            'verify_release_readiness.py --tag "${GITHUB_REF_NAME}"',
+            self.workflow,
+        )
 
     def test_published_images_include_supply_chain_metadata(self):
         self.assertIn("sbom: true", self.workflow)

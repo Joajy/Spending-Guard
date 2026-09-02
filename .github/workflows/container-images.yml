@@ -6,6 +6,9 @@ on:
       - "backend/**"
       - "frontend/**"
       - "scripts/release/**"
+      - "VERSION"
+      - "CHANGELOG.md"
+      - "deploy/.env.example"
       - ".github/workflows/container-images.yml"
   push:
     tags:
@@ -28,6 +31,9 @@ jobs:
 
       - name: Validate release workflow contract
         run: python -m unittest discover -s scripts/release/tests -p "test_*.py"
+
+      - name: Validate release version consistency
+        run: python scripts/release/verify_release_readiness.py
 
   validate:
     if: github.event_name == 'pull_request'
@@ -85,6 +91,7 @@ jobs:
             echo "Release tag must use vMAJOR.MINOR.PATCH."
             exit 1
           fi
+          python scripts/release/verify_release_readiness.py --tag "${GITHUB_REF_NAME}"
           git fetch origin main
           git merge-base --is-ancestor "${GITHUB_SHA}" origin/main
 

@@ -19,3 +19,5 @@
 - 이미지는 일반 사용자 권한으로 실행하며 SBOM과 provenance를 함께 발행한다.
 
 최초 발행 후 외부 배포 플랫폼에서 이미지를 받아야 한다면 GitHub Packages 화면에서 이미지 공개 범위를 확인한다. 릴리스 태그 생성과 이미지 공개 범위 변경은 배포 승인 이후에 수행한다.
+
+첫 `v0.1.0` 발행 전에 [`first-release-checklist.md`](first-release-checklist.md)의 운영 준비와 승인 절차를 확인한다. `VERSION`, 백엔드·프론트엔드와 배포 설정의 버전이 하나라도 다르면 발행 job은 시작되지 않는다.
