@@ -653,6 +653,39 @@ Kafka 발행기와 분석 Consumer는 측정에서 제외했다. 따라서 이 �
 
 증빙: [Deployment config 재검증](https://github.com/Joajy/Spending-Guard/actions/runs/33642329521), [원인과 해결 이력](https://github.com/Joajy/Spending-Guard/issues/47)
 
+### 운영 지표와 장애 경보
+
+기준: `chore/operational-observability`, Backend CI·Deployment config·Full-stack smoke, 2026-09-03
+
+| 구분 | 결과 |
+|---|---:|
+| 백엔드 테스트 | 205/205 통과 |
+| 백엔드 라인 커버리지 | 92.65% |
+| 백엔드 브랜치 커버리지 | 77.19% |
+| 빠른 파서 회귀 데이터셋 | 25/25 정답 |
+| 위험 분류 회귀 데이터셋 | 15/15 정답 |
+| Postman 요청 | 25/25 성공 |
+| Postman assertion | 54/54 통과 |
+| Postman 평균 응답 시간 | 109.92ms |
+| 배포·보안 계약 테스트 | 5/5 통과 |
+| Prometheus 설정 파일 | 1/1 문법 검증 통과 |
+| Prometheus 경보 규칙 | 5/5 문법 검증 통과 |
+| Grafana 기본 패널 | 6개 구성 |
+| 전체 서비스 사용자 여정 | 1/1 통과 |
+| 최종 실패 job | 0건 |
+
+다음 운영 관측 경계를 검증했다.
+
+- Prometheus가 외부에 공개되지 않은 백엔드 관리 포트의 `/actuator/prometheus`를 수집한다.
+- 백엔드 중단, 5xx 비율, Outbox 발행 실패, 소비 분석 실패와 JVM heap 압력을 다섯 개 경보 규칙으로 판정한다.
+- Grafana는 서버 loopback 주소에만 연결하고 익명 접근과 사용자 임의 가입을 비활성화한다.
+- 요청 식별자는 안전한 형식만 유지하며 응답 헤더와 구조화 로그에 같은 값을 기록한 뒤 요청 종료 시 MDC에서 제거한다.
+- 모든 컨테이너 로그를 파일당 10MB, 최대 5개로 순환해 단일 서버의 로그 디스크 사용량을 제한한다.
+
+Prometheus 설정과 경보 표현식은 공식 `promtool`로 검증했지만 실제 운영 트래픽에서 경보가 발생하고 외부 알림 채널까지 전달되는 과정은 아직 측정하지 않았다. 평균 응답 시간은 공유 CI의 단일 Postman 실행값이며 관측성 기능 자체의 성능 수치로 해석하지 않는다.
+
+증빙: [Backend CI·Postman](https://github.com/Joajy/Spending-Guard/actions/runs/33646088278), [Deployment config](https://github.com/Joajy/Spending-Guard/actions/runs/33646088342), [Full-stack smoke](https://github.com/Joajy/Spending-Guard/actions/runs/33646088255)
+
 ## 수치 해석 기준
 
 - `100% 파서 정답률`은 고정된 25건의 회귀 데이터셋에 대한 결과다. 금융 알림 전체나 운영 환경의 일반 정확도를 의미하지 않는다.
@@ -679,5 +712,6 @@ Kafka 발행기와 분석 Consumer는 측정에서 제외했다. 따라서 이 �
 - registry 쓰기 없이 백엔드와 프론트엔드 컨테이너 이미지를 각각 빌드해 배포 산출물 생성 경계를 확인했다.
 - 공개 진입점을 Caddy 한 개로 제한하고 나머지 네 서비스의 호스트 포트를 닫은 운영 Compose 계약을 검증했다.
 - PostgreSQL의 기준 데이터를 백업한 뒤 데이터베이스를 재생성하고 복구해 원본 값이 돌아오는 전체 복구 훈련을 통과했다.
+- Prometheus 설정 한 개와 핵심 경보 규칙 다섯 개를 공식 검사 도구로 검증하고 여섯 개 패널의 운영 대시보드를 구성했다.
 
 위 문장은 해당 실행 시점의 사실이다. 표본이 확대되면 최신 결과와 조건으로 갱신한다.
