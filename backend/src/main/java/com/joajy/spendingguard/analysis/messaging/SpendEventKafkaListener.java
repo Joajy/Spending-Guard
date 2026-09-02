@@ -4,6 +4,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.joajy.spendingguard.analysis.service.command.ProcessSpendEventCommand;
 import com.joajy.spendingguard.analysis.service.port.inbound.ProcessSpendEventUseCase;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
@@ -25,13 +28,22 @@ class SpendEventKafkaListener {
 
     private final ObjectMapper objectMapper;
     private final ProcessSpendEventUseCase processSpendEventUseCase;
+    private final MeterRegistry meterRegistry;
+    private final Counter successCounter;
+    private final Counter failureCounter;
+    private final Timer processingTimer;
 
     SpendEventKafkaListener(
             ObjectMapper objectMapper,
-            ProcessSpendEventUseCase processSpendEventUseCase
+            ProcessSpendEventUseCase processSpendEventUseCase,
+            MeterRegistry meterRegistry
     ) {
         this.objectMapper = objectMapper;
         this.processSpendEventUseCase = processSpendEventUseCase;
+        this.meterRegistry = meterRegistry;
+        this.successCounter = meterRegistry.counter("spending.guard.analysis.consume.success");
+        this.failureCounter = meterRegistry.counter("spending.guard.analysis.consume.failure");
+        this.processingTimer = meterRegistry.timer("spending.guard.analysis.consume.duration");
     }
 
     @KafkaListener(
@@ -39,8 +51,17 @@ class SpendEventKafkaListener {
             groupId = "${spending-guard.analysis.consumer.group-id}"
     )
     void consume(String payload) {
-        SpendEventReceivedMessage message = deserialize(payload);
-        processSpendEventUseCase.process(new ProcessSpendEventCommand(message.eventId()));
+        Timer.Sample sample = Timer.start(meterRegistry);
+        try {
+            SpendEventReceivedMessage message = deserialize(payload);
+            processSpendEventUseCase.process(new ProcessSpendEventCommand(message.eventId()));
+            successCounter.increment();
+        } catch (RuntimeException exception) {
+            failureCounter.increment();
+            throw exception;
+        } finally {
+            sample.stop(processingTimer);
+        }
     }
 
     private SpendEventReceivedMessage deserialize(String payload) {

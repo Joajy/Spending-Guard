@@ -7,8 +7,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.joajy.spendingguard.analysis.service.command.ProcessSpendEventCommand;
 import com.joajy.spendingguard.analysis.service.port.inbound.ProcessSpendEventUseCase;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.Test;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -17,7 +19,12 @@ class SpendEventKafkaListenerTest {
 
     private final ProcessSpendEventUseCase useCase = mock(ProcessSpendEventUseCase.class);
     private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
-    private final SpendEventKafkaListener listener = new SpendEventKafkaListener(objectMapper, useCase);
+    private final SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
+    private final SpendEventKafkaListener listener = new SpendEventKafkaListener(
+            objectMapper,
+            useCase,
+            meterRegistry
+    );
 
     @Test
     void forwardsVersionOneMessageToProcessingUseCase() {
@@ -34,6 +41,10 @@ class SpendEventKafkaListenerTest {
         listener.consume(payload);
 
         verify(useCase).process(new ProcessSpendEventCommand(eventId));
+        assertThat(meterRegistry.counter("spending.guard.analysis.consume.success").count())
+                .isOne();
+        assertThat(meterRegistry.timer("spending.guard.analysis.consume.duration").count())
+                .isOne();
     }
 
     @Test
@@ -49,5 +60,7 @@ class SpendEventKafkaListenerTest {
 
         assertThatThrownBy(() -> listener.consume(payload))
                 .isInstanceOf(InvalidSpendEventMessageException.class);
+        assertThat(meterRegistry.counter("spending.guard.analysis.consume.failure").count())
+                .isOne();
     }
 }

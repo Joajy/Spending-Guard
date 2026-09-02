@@ -27,8 +27,21 @@ spending-guard:
 server:
   forward-headers-strategy: framework
 
+logging:
+  structured:
+    format:
+      console: logstash
+
 management:
+  server:
+    port: 9090
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,prometheus
+  metrics:
+    tags:
+      application: ${spring.application.name}
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true

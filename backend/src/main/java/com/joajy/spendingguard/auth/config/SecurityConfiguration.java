@@ -49,6 +49,7 @@ public class SecurityConfiguration {
                                 "/api/v1/users/*/email-verification/**",
                                 "/api/v1/status",
                                 "/actuator/health/**",
+                                "/actuator/prometheus",
                                 "/livez",
                                 "/readyz"
                         ).permitAll()

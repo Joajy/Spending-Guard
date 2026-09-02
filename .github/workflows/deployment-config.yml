@@ -29,5 +29,13 @@ jobs:
       - name: Validate resolved production Compose model
         run: python scripts/deployment/verify_production_compose.py
 
+      - name: Validate Prometheus configuration and alert rules
+        run: >-
+          docker run --rm
+          --entrypoint /bin/promtool
+          --volume "${{ github.workspace }}/deploy/observability:/etc/prometheus:ro"
+          prom/prometheus:v3.14.0
+          check config /etc/prometheus/prometheus.yml
+
       - name: Verify PostgreSQL backup and restore
         run: bash scripts/database/tests/backup_restore_smoke.sh

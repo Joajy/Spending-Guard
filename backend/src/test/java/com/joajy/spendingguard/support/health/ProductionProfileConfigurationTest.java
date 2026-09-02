@@ -40,6 +40,20 @@ class ProductionProfileConfigurationTest {
                 .isEqualTo("readinessState,db");
     }
 
+    @Test
+    void productionProfileExposesMetricsOnDedicatedManagementPort() throws IOException {
+        PropertySource<?> source = load("application-prod.yml");
+
+        assertThat(source.getProperty("management.server.port")).isEqualTo(9090);
+        assertThat(source.getProperty("management.endpoints.web.exposure.include"))
+                .isEqualTo("health,info,prometheus");
+        assertThat(source.getProperty("logging.structured.format.console"))
+                .isEqualTo("logstash");
+        assertThat(source.getProperty(
+                "management.metrics.distribution.percentiles-histogram.http.server.requests"
+        )).isEqualTo(true);
+    }
+
     private PropertySource<?> load(String resource) throws IOException {
         return loader.load(resource, new ClassPathResource(resource)).getFirst();
     }
