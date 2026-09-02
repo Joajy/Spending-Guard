@@ -5,6 +5,8 @@ on:
     paths:
       - "deploy/**"
       - "scripts/deployment/**"
+      - "scripts/database/**"
+      - "docs/deployment/**"
       - ".github/workflows/deployment-config.yml"
 
 permissions:
@@ -26,3 +28,6 @@ jobs:
 
       - name: Validate resolved production Compose model
         run: python scripts/deployment/verify_production_compose.py
+
+      - name: Verify PostgreSQL backup and restore
+        run: bash scripts/database/tests/backup_restore_smoke.sh

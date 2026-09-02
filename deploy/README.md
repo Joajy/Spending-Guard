@@ -22,4 +22,6 @@ Caddy는 도메인의 TLS 인증서를 자동으로 발급하고 갱신한다. �
 
 롤백은 `.env`의 `RELEASE_VERSION`을 이전 정상 버전으로 바꾸고 `pull`, `up -d --wait`를 다시 실행한다. 데이터베이스 migration이 하위 호환되지 않는 릴리스는 이미지 롤백만으로 복구할 수 없으므로 배포 전에 migration 복구 절차를 별도로 준비한다.
 
-현재 구성은 단일 서버용이다. PostgreSQL 백업, 서버 방화벽, 로그 수집과 가용성 이중화는 호스팅 환경을 정한 뒤 그 환경의 관리형 기능과 연결한다.
+현재 구성은 단일 서버용이다. 서버 방화벽, 로그 수집과 가용성 이중화는 호스팅 환경을 정한 뒤 그 환경의 관리형 기능과 연결한다.
+
+PostgreSQL 백업 파일 생성과 복구 훈련 방법은 [`docs/deployment/database-backup-recovery.md`](../docs/deployment/database-backup-recovery.md)를 따른다. 백업 파일은 저장소에 포함하지 않고 암호화된 별도 저장소로 복사한다.

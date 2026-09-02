@@ -16,6 +16,7 @@ coverage/
 frontend/reports/
 reports/generated/
 performance/results/
+backups/
 __pycache__/
 *.pyc
 *.log
