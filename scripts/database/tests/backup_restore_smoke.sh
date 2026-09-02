@@ -20,7 +20,7 @@ compose() {
 
 cleanup() {
   compose down --volumes --remove-orphans >/dev/null 2>&1 || true
-  rm -f -- "${BACKUP_DIRECTORY}"/* "${TEMP_DIRECTORY}"/*
+  rm -f -- "${BACKUP_DIRECTORY}"/*
   rmdir "${BACKUP_DIRECTORY}" "${TEMP_DIRECTORY}" 2>/dev/null || true
 }
 trap cleanup EXIT
