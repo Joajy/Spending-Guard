@@ -48,6 +48,9 @@ class ProtectedUserApiSecurityTest {
 
         mockMvc.perform(get("/readyz"))
                 .andExpect(status().isNotFound());
+
+        mockMvc.perform(get("/actuator/prometheus"))
+                .andExpect(status().isNotFound());
     }
 
     @Test
