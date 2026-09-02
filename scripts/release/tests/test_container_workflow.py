@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 import unittest
 
 
@@ -31,6 +32,14 @@ class ContainerWorkflowContractTest(unittest.TestCase):
         self.assertIn("provenance: mode=max", self.workflow)
         self.assertIn("ghcr.io/joajy/spending-guard-backend", self.workflow)
         self.assertIn("ghcr.io/joajy/spending-guard-frontend", self.workflow)
+
+    def test_external_actions_are_pinned_to_immutable_commits(self):
+        action_references = re.findall(r"uses: ([^\s]+)", self.workflow)
+
+        self.assertGreater(len(action_references), 0)
+        for reference in action_references:
+            with self.subTest(reference=reference):
+                self.assertRegex(reference, r"@[0-9a-f]{40}$")
 
     def test_runtime_images_do_not_run_as_root(self):
         backend = (ROOT / "backend" / "Dockerfile").read_text(encoding="utf-8")
