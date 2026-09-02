@@ -686,6 +686,34 @@ Prometheus 설정과 경보 표현식은 공식 `promtool`로 검증했지만 �
 
 증빙: [Backend CI·Postman](https://github.com/Joajy/Spending-Guard/actions/runs/33646088278), [Deployment config](https://github.com/Joajy/Spending-Guard/actions/runs/33646088342), [Full-stack smoke](https://github.com/Joajy/Spending-Guard/actions/runs/33646088255)
 
+### 첫 릴리스 준비 검증
+
+기준: `chore/first-release-readiness`, Backend CI·Container images·Deployment config·Full-stack smoke, 2026-09-03
+
+| 구분 | 결과 |
+|---|---:|
+| 릴리스 계약 테스트 | 8/8 통과 |
+| 구성 요소 버전 일치 | 1/1 통과 (`0.1.0`) |
+| 백엔드 테스트 | 205/205 통과 |
+| 백엔드 라인 커버리지 | 92.65% |
+| 백엔드 브랜치 커버리지 | 77.19% |
+| 빠른 파서 회귀 데이터셋 | 25/25 정답 |
+| 위험 분류 회귀 데이터셋 | 15/15 정답 |
+| Postman 요청 | 25/25 성공 |
+| Postman assertion | 54/54 통과 |
+| Postman 평균 응답 시간 | 112.52ms |
+| 컨테이너 이미지 빌드 | 2/2 성공 |
+| 배포 설정 검증 | 1/1 통과 |
+| 전체 서비스 스모크 검증 | 1/1 통과 |
+| 이미지 발행·서버 배포 | 0건 |
+| 최종 실패 job | 0건 |
+
+루트, 백엔드, 프론트엔드와 운영 환경 예시의 버전을 `0.1.0`으로 맞추고 태그 형식, 변경 이력과 필수 배포 문서의 존재를 자동 검사했다. 백엔드와 프론트엔드 이미지는 registry 쓰기 없이 각각 빌드해 산출 가능 여부를 확인했다. PR 검증에서는 `publish` job이 의도대로 건너뛰어 이미지 발행이나 서버 변경이 발생하지 않았다.
+
+현재 결과는 첫 배포 직전의 내부 일관성과 빌드 가능성을 확인한 것이다. 실제 `v0.1.0` 태그, GitHub Release, GHCR 이미지 발행과 운영 서버 배포는 별도 승인 후 수행해야 한다.
+
+증빙: [Backend CI·Postman](https://github.com/Joajy/Spending-Guard/actions/runs/33690252373), [Container images](https://github.com/Joajy/Spending-Guard/actions/runs/33690252409), [Deployment config](https://github.com/Joajy/Spending-Guard/actions/runs/33690252342), [Full-stack smoke](https://github.com/Joajy/Spending-Guard/actions/runs/33690252383)
+
 ## 수치 해석 기준
 
 - `100% 파서 정답률`은 고정된 25건의 회귀 데이터셋에 대한 결과다. 금융 알림 전체나 운영 환경의 일반 정확도를 의미하지 않는다.
