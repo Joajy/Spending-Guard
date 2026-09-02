@@ -48,7 +48,9 @@ public class SecurityConfiguration {
                         .requestMatchers(
                                 "/api/v1/users/*/email-verification/**",
                                 "/api/v1/status",
-                                "/actuator/health/**"
+                                "/actuator/health/**",
+                                "/livez",
+                                "/readyz"
                         ).permitAll()
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(resourceServer -> resourceServer

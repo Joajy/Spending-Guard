@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   backendUrl,
   clearSessionCookies,
@@ -18,11 +18,36 @@ const tokens = {
 };
 
 describe("backend session helpers", () => {
-  afterEach(() => delete process.env.BACKEND_API_URL);
+  afterEach(() => {
+    delete process.env.BACKEND_API_URL;
+    vi.unstubAllEnvs();
+  });
 
   it("builds backend URLs without duplicate slashes", () => {
     process.env.BACKEND_API_URL = "http://backend:8080/";
     expect(backendUrl("/api/v1/status")).toBe("http://backend:8080/api/v1/status");
+  });
+
+  it("uses localhost only outside production", () => {
+    vi.stubEnv("NODE_ENV", "test");
+    expect(backendUrl("/api/v1/status")).toBe("http://localhost:8080/api/v1/status");
+  });
+
+  it("fails fast when a production backend origin is missing", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    expect(() => backendUrl("/api/v1/status"))
+      .toThrow("BACKEND_API_URL is required in production.");
+  });
+
+  it.each([
+    "backend:8080",
+    "ftp://backend:8080",
+    "http://user:password@backend:8080",
+    "http://backend:8080/api",
+  ])("rejects an unsafe backend origin: %s", (origin) => {
+    process.env.BACKEND_API_URL = origin;
+    expect(() => backendUrl("/api/v1/status"))
+      .toThrow("BACKEND_API_URL must be an absolute HTTP(S) origin.");
   });
 
   it("writes and clears HttpOnly session cookies", () => {

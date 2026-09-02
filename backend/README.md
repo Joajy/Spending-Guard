@@ -59,6 +59,8 @@ JWT_ACCESS_TOKEN_TTL=15m
 
 `JWT_SECRET`의 기본값은 로컬 실행 전용입니다. 외부에서 접근 가능한 환경에서는 충분히 긴 임의 값으로 반드시 교체합니다.
 
+운영 환경은 `SPRING_PROFILES_ACTIVE=prod`로 실행합니다. 데이터베이스, Kafka, JWT와 SMTP 필수 값이 누락되면 로컬 기본값으로 대신 시작하지 않습니다. 배포 플랫폼의 상태 점검은 프로세스 생존 확인에 `/livez`, PostgreSQL을 포함한 트래픽 준비 확인에 `/readyz`를 사용합니다. 전체 변수와 상태 판정 기준은 [`docs/deployment/runtime-configuration.md`](../docs/deployment/runtime-configuration.md)에 정리했습니다.
+
 발행 성공·실패와 배치 처리 시간은 `/actuator/metrics`에서 `spending.guard.outbox`로 시작하는 지표를 조회할 수 있습니다.
 
 ## 패키지 구조
