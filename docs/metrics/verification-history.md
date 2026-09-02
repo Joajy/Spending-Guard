@@ -585,6 +585,30 @@ Kafka 발행기와 분석 Consumer는 측정에서 제외했다. 따라서 이 �
 
 증빙: [Frontend CI](https://github.com/Joajy/Spending-Guard/actions/runs/33621350245), [Backend CI·Postman](https://github.com/Joajy/Spending-Guard/actions/runs/33621350154), [Full-stack smoke](https://github.com/Joajy/Spending-Guard/actions/runs/33621350278), [원인과 해결 이력](https://github.com/Joajy/Spending-Guard/issues/43)
 
+### 버전 기반 컨테이너 릴리스
+
+기준: `chore/container-image-release`, Container images, 2026-09-02
+
+| 구분 | 결과 |
+|---|---:|
+| 릴리스 계약 테스트 | 5/5 통과 |
+| 백엔드 이미지 빌드 | 성공, 2분 48초 |
+| 프론트엔드 이미지 빌드 | 성공, 3분 15초 |
+| PR registry 발행 | 0건 |
+| 실패한 job | 0건 |
+
+다음 릴리스 경계를 검증했다.
+
+- Pull Request에서는 registry 쓰기 권한 없이 백엔드와 프론트엔드 이미지를 각각 빌드한다.
+- 이미지 발행 job은 PR에서 실행되지 않고 버전 태그에서만 실행된다.
+- 버전 태그 형식과 태그 커밋의 `main` 포함 여부를 발행 전에 검사한다.
+- 발행 이미지 이름과 비루트 실행 사용자, SBOM과 provenance 설정을 계약 테스트로 확인한다.
+- `latest`를 자동 변경하지 않고 정확한 버전과 major.minor 태그만 생성한다.
+
+실제 GHCR 이미지는 아직 발행하지 않았다. 최초 버전 태그 생성과 package 공개 범위 변경은 별도 배포 승인 이후 수행한다.
+
+증빙: [Container images 실행 결과](https://github.com/Joajy/Spending-Guard/actions/runs/33631388303)
+
 ## 수치 해석 기준
 
 - `100% 파서 정답률`은 고정된 25건의 회귀 데이터셋에 대한 결과다. 금융 알림 전체나 운영 환경의 일반 정확도를 의미하지 않는다.
@@ -608,5 +632,6 @@ Kafka 발행기와 분석 Consumer는 측정에서 제외했다. 따라서 이 �
 - 동일한 접수 시나리오 200건에서 실패 0건과 p95 17ms를 확인했다.
 - 운영 상태 점검과 JWT 변조 검증을 포함한 백엔드 테스트 202건과 Postman assertion 54건을 모두 통과했다.
 - 다섯 개 서비스를 한 번에 실행한 뒤 가입부터 소비 분석, 대시보드 반영과 로그아웃까지의 사용자 여정을 1건 자동 검증했다.
+- registry 쓰기 없이 백엔드와 프론트엔드 컨테이너 이미지를 각각 빌드해 배포 산출물 생성 경계를 확인했다.
 
 위 문장은 해당 실행 시점의 사실이다. 표본이 확대되면 최신 결과와 조건으로 갱신한다.
