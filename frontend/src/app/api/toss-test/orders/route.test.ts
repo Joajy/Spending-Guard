@@ -37,7 +37,7 @@ describe("Toss test BFF routes", () => {
   });
 
   it("forwards confirmation and cancellation to the same owned order", async () => {
-    const backend = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(
+    const backend = vi.spyOn(globalThis, "fetch").mockImplementation(async () => new Response(
       JSON.stringify({ status: "DONE" }),
       { status: 200 },
     ));

@@ -10,6 +10,11 @@ const requestPayment = vi.fn();
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ replace, refresh }),
 }));
+vi.mock("next/script", () => ({
+  default: ({ onLoad }: { onLoad?: () => void }) => (
+    <button data-testid="toss-sdk-script" type="button" onClick={onLoad} />
+  ),
+}));
 vi.mock("@/features/navigation/AppHeader", () => ({ AppHeader: () => <header /> }));
 
 describe("TossCheckoutView", () => {
@@ -33,8 +38,8 @@ describe("TossCheckoutView", () => {
       amount: 12_800,
       orderName: "Spending Guard 자동수집 테스트",
     }), { status: 200 }));
-    const { container } = render(<TossCheckoutView />);
-    fireEvent.load(container.querySelector("script")!);
+    render(<TossCheckoutView />);
+    fireEvent.click(screen.getByTestId("toss-sdk-script"));
 
     await user.click(screen.getByRole("button", { name: "Toss 테스트 결제하기" }));
 
@@ -54,8 +59,8 @@ describe("TossCheckoutView", () => {
       JSON.stringify({ message: "Toss 연동이 비활성화되어 있습니다." }),
       { status: 503 },
     ));
-    const { container } = render(<TossCheckoutView />);
-    fireEvent.load(container.querySelector("script")!);
+    render(<TossCheckoutView />);
+    fireEvent.click(screen.getByTestId("toss-sdk-script"));
 
     await user.click(screen.getByRole("button", { name: "Toss 테스트 결제하기" }));
 
