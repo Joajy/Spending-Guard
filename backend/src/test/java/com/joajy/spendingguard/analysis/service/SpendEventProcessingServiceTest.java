@@ -2,19 +2,20 @@ package com.joajy.spendingguard.analysis.service;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.time.YearMonth;
 import java.time.ZoneOffset;
 import java.util.UUID;
 
+import com.joajy.spendingguard.analysis.domain.policy.FastSpendEventParser;
+import com.joajy.spendingguard.analysis.domain.policy.SpendRiskClassifier;
 import com.joajy.spendingguard.analysis.service.command.ProcessSpendEventCommand;
 import com.joajy.spendingguard.analysis.service.model.SpendEventAnalysisTarget;
-import com.joajy.spendingguard.analysis.service.port.outbound.LoadSpendEventForAnalysisPort;
 import com.joajy.spendingguard.analysis.service.port.outbound.ApplyBudgetConsumptionPort;
+import com.joajy.spendingguard.analysis.service.port.outbound.LoadSpendEventForAnalysisPort;
 import com.joajy.spendingguard.analysis.service.port.outbound.StoreFastParseResultPort;
 import com.joajy.spendingguard.analysis.service.port.outbound.TryClaimProcessedEventPort;
 import com.joajy.spendingguard.analysis.service.port.outbound.UpdateSpendEventStatusPort;
 import com.joajy.spendingguard.analysis.service.result.SpendEventProcessingResult;
-import com.joajy.spendingguard.analysis.domain.policy.FastSpendEventParser;
-import com.joajy.spendingguard.analysis.domain.policy.SpendRiskClassifier;
 import com.joajy.spendingguard.spendevent.domain.model.SpendEventStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,20 +36,11 @@ class SpendEventProcessingServiceTest {
 
     private static final Instant NOW = Instant.parse("2026-08-18T01:00:00Z");
 
-    @Mock
-    private TryClaimProcessedEventPort tryClaimProcessedEventPort;
-
-    @Mock
-    private LoadSpendEventForAnalysisPort loadSpendEventForAnalysisPort;
-
-    @Mock
-    private StoreFastParseResultPort storeFastParseResultPort;
-
-    @Mock
-    private UpdateSpendEventStatusPort updateSpendEventStatusPort;
-
-    @Mock
-    private ApplyBudgetConsumptionPort applyBudgetConsumptionPort;
+    @Mock private TryClaimProcessedEventPort tryClaimProcessedEventPort;
+    @Mock private LoadSpendEventForAnalysisPort loadSpendEventForAnalysisPort;
+    @Mock private StoreFastParseResultPort storeFastParseResultPort;
+    @Mock private UpdateSpendEventStatusPort updateSpendEventStatusPort;
+    @Mock private ApplyBudgetConsumptionPort applyBudgetConsumptionPort;
 
     private SpendEventProcessingService service;
 
@@ -70,35 +62,21 @@ class SpendEventProcessingServiceTest {
     void storesFastParseResultAndMovesEventToAnalyzing() {
         UUID eventId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
-        given(tryClaimProcessedEventPort.tryClaim(
-                eventId,
-                SpendEventProcessingService.CONSUMER_NAME,
-                NOW
-        )).willReturn(true);
+        given(tryClaimProcessedEventPort.tryClaim(eventId, SpendEventProcessingService.CONSUMER_NAME, NOW))
+                .willReturn(true);
         given(loadSpendEventForAnalysisPort.load(eventId)).willReturn(new SpendEventAnalysisTarget(
-                eventId,
-                userId,
-                "쿠팡 12,800원 결제",
-                NOW.minusSeconds(10)
+                eventId, userId, "쿠팡 12,800원 결제", NOW.minusSeconds(10)
         ));
 
         var result = service.process(new ProcessSpendEventCommand(eventId));
 
         assertThat(result).isEqualTo(SpendEventProcessingResult.PROCESSED);
         verify(storeFastParseResultPort).store(
-                eq(eventId),
-                any(),
-                any(),
-                eq(SpendEventProcessingService.PARSER_VERSION),
-                eq(NOW)
+                eq(eventId), any(), any(), eq(SpendEventProcessingService.PARSER_VERSION), eq(NOW)
         );
         verify(updateSpendEventStatusPort).update(eventId, SpendEventStatus.ANALYZING);
         verify(applyBudgetConsumptionPort).apply(
-                userId,
-                eventId,
-                java.time.YearMonth.of(2026, 8),
-                12_800L,
-                NOW
+                userId, eventId, YearMonth.of(2026, 8), 12_800L, NOW
         );
     }
 
@@ -107,10 +85,7 @@ class SpendEventProcessingServiceTest {
         UUID eventId = UUID.randomUUID();
         given(tryClaimProcessedEventPort.tryClaim(any(), any(), any())).willReturn(true);
         given(loadSpendEventForAnalysisPort.load(eventId)).willReturn(new SpendEventAnalysisTarget(
-                eventId,
-                UUID.randomUUID(),
-                "결제 금액 확인 필요",
-                NOW
+                eventId, UUID.randomUUID(), "결제 금액 확인 필요", NOW
         ));
 
         var result = service.process(new ProcessSpendEventCommand(eventId));
@@ -121,20 +96,20 @@ class SpendEventProcessingServiceTest {
     }
 
     @Test
-    void doesNotChangeBudgetForCancellationBeforeMatchingPolicyExists() {
+    void appliesCancellationAsNegativeBudgetDelta() {
         UUID eventId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
         given(tryClaimProcessedEventPort.tryClaim(any(), any(), any())).willReturn(true);
         given(loadSpendEventForAnalysisPort.load(eventId)).willReturn(new SpendEventAnalysisTarget(
-                eventId,
-                UUID.randomUUID(),
-                "쿠팡 12,800원 결제 취소",
-                NOW
+                eventId, userId, "쿠팡 12,800원 결제 취소", NOW
         ));
 
         var result = service.process(new ProcessSpendEventCommand(eventId));
 
         assertThat(result).isEqualTo(SpendEventProcessingResult.PROCESSED);
-        verify(applyBudgetConsumptionPort, never()).apply(any(), any(), any(), anyLong(), any());
+        verify(applyBudgetConsumptionPort).apply(
+                userId, eventId, YearMonth.of(2026, 8), -12_800L, NOW
+        );
     }
 
     @Test

@@ -1,8 +1,8 @@
 package com.joajy.spendingguard.budget.repository;
 
 import java.time.Instant;
-import java.time.ZoneOffset;
 import java.time.YearMonth;
+import java.time.ZoneOffset;
 import java.util.Map;
 import java.util.UUID;
 
@@ -11,7 +11,7 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-/** 결제별 예산 반영 원장과 월 누적 사용액을 같은 트랜잭션에서 갱신한다. */
+/** 결제별 예산 증감 원장과 월 누적 사용액을 같은 트랜잭션에서 갱신한다. */
 @Component
 class BudgetConsumptionPersistenceAdapter implements ApplyBudgetConsumptionPort {
 
@@ -25,7 +25,7 @@ class BudgetConsumptionPersistenceAdapter implements ApplyBudgetConsumptionPort 
             RETURNING budget_id
             """;
 
-    private static final String INCREASE_SPENT_AMOUNT = """
+    private static final String CHANGE_SPENT_AMOUNT = """
             UPDATE monthly_budget
                SET spent_amount = spent_amount + :amount,
                    version = version + 1,
@@ -41,13 +41,16 @@ class BudgetConsumptionPersistenceAdapter implements ApplyBudgetConsumptionPort 
 
     @Override
     @Transactional
-    public boolean apply(UUID userId, UUID eventId, YearMonth month, long amount, Instant appliedAt) {
+    public boolean apply(UUID userId, UUID eventId, YearMonth month, long signedAmount, Instant appliedAt) {
+        if (signedAmount == 0) {
+            throw new IllegalArgumentException("예산 반영 금액은 0일 수 없습니다.");
+        }
         Map<String, Object> parameters = Map.of(
                 "id", UUID.randomUUID(),
                 "userId", userId,
                 "eventId", eventId,
                 "month", month.toString(),
-                "amount", amount,
+                "amount", signedAmount,
                 "appliedAt", appliedAt.atOffset(ZoneOffset.UTC)
         );
         UUID budgetId = jdbcClient.sql(RECORD_CONSUMPTION)
@@ -58,9 +61,9 @@ class BudgetConsumptionPersistenceAdapter implements ApplyBudgetConsumptionPort 
         if (budgetId == null) {
             return false;
         }
-        int updated = jdbcClient.sql(INCREASE_SPENT_AMOUNT)
+        int updated = jdbcClient.sql(CHANGE_SPENT_AMOUNT)
                 .param("budgetId", budgetId)
-                .param("amount", amount)
+                .param("amount", signedAmount)
                 .param("appliedAt", appliedAt.atOffset(ZoneOffset.UTC))
                 .update();
         if (updated != 1) {

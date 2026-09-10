@@ -34,11 +34,8 @@ class BudgetConsumptionPersistenceIntegrationTest {
     @ServiceConnection
     static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:16-alpine");
 
-    @Autowired
-    private BudgetConsumptionPersistenceAdapter adapter;
-
-    @Autowired
-    private JdbcClient jdbcClient;
+    @Autowired private BudgetConsumptionPersistenceAdapter adapter;
+    @Autowired private JdbcClient jdbcClient;
 
     @BeforeEach
     void setUp() {
@@ -68,8 +65,19 @@ class BudgetConsumptionPersistenceIntegrationTest {
         assertThat(first).isTrue();
         assertThat(duplicate).isFalse();
         assertThat(spentAmount()).isEqualTo(12_800);
-        assertThat(jdbcClient.sql("SELECT COUNT(*) FROM budget_consumption")
-                .query(Long.class).single()).isOne();
+        assertThat(consumptionCount()).isOne();
+    }
+
+    @Test
+    void appliesCancellationAsASeparateNegativeDelta() {
+        UUID paymentId = insertSpendEvent("payment-budget-1");
+        UUID cancellationId = insertSpendEvent("cancel-budget-1");
+
+        assertThat(adapter.apply(USER_ID, paymentId, YearMonth.of(2026, 8), 12_800, NOW)).isTrue();
+        assertThat(adapter.apply(USER_ID, cancellationId, YearMonth.of(2026, 8), -3_000, NOW)).isTrue();
+
+        assertThat(spentAmount()).isEqualTo(9_800);
+        assertThat(consumptionCount()).isEqualTo(2);
     }
 
     @Test
@@ -80,8 +88,7 @@ class BudgetConsumptionPersistenceIntegrationTest {
 
         assertThat(applied).isFalse();
         assertThat(spentAmount()).isZero();
-        assertThat(jdbcClient.sql("SELECT COUNT(*) FROM budget_consumption")
-                .query(Long.class).single()).isZero();
+        assertThat(consumptionCount()).isZero();
     }
 
     @Test
@@ -108,8 +115,7 @@ class BudgetConsumptionPersistenceIntegrationTest {
                 assertThat(future.get()).isTrue();
             }
             assertThat(spentAmount()).isEqualTo(102_400);
-            assertThat(jdbcClient.sql("SELECT COUNT(*) FROM budget_consumption")
-                    .query(Long.class).single()).isEqualTo(paymentCount);
+            assertThat(consumptionCount()).isEqualTo(paymentCount);
         } finally {
             executor.shutdownNow();
         }
@@ -135,6 +141,12 @@ class BudgetConsumptionPersistenceIntegrationTest {
     private long spentAmount() {
         return jdbcClient.sql("SELECT spent_amount FROM monthly_budget WHERE id = :id")
                 .param("id", BUDGET_ID)
+                .query(Long.class)
+                .single();
+    }
+
+    private long consumptionCount() {
+        return jdbcClient.sql("SELECT COUNT(*) FROM budget_consumption")
                 .query(Long.class)
                 .single();
     }

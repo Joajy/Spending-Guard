@@ -136,3 +136,12 @@ macOS 또는 Linux:
 테스트 결과는 `build/reports/tests/test/index.html`, 커버리지는 `build/reports/jacoco/test/html/index.html`에서 확인할 수 있습니다.
 
 GitHub Actions 실행 요약에는 전체 테스트 통과율, 빠른 파서 회귀 데이터셋 정확도, 라인·브랜치 커버리지가 함께 표시됩니다. HTML 테스트·커버리지 보고서는 각 실행의 `backend-test-reports` artifact에서 내려받을 수 있습니다.
+
+
+## Toss Payments 테스트 웹훅
+
+연결한 Toss Payments 테스트 상점의 결제·취소를 자동 접수할 수 있습니다. 이는 사용자의
+전체 카드 결제 내역이 아니라 해당 상점에서 발생한 거래만 다룹니다. 필요한 환경 변수,
+검증 방식, 테스트 요청과 현재 한계는
+[`docs/integrations/toss-payments-webhook.md`](../docs/integrations/toss-payments-webhook.md)를
+참고하세요.

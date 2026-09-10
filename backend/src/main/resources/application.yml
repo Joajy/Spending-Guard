@@ -48,6 +48,15 @@ spending-guard:
     refresh-token-ttl: ${JWT_REFRESH_TOKEN_TTL:14d}
   mail:
     from: ${MAIL_FROM:no-reply@spending-guard.local}
+  integrations:
+    toss-payments:
+      enabled: ${TOSS_PAYMENT_WEBHOOK_ENABLED:false}
+      base-url: ${TOSS_PAYMENT_API_BASE_URL:https://api.tosspayments.com}
+      connect-timeout: ${TOSS_PAYMENT_CONNECT_TIMEOUT:2s}
+      read-timeout: ${TOSS_PAYMENT_READ_TIMEOUT:5s}
+      secret-key: ${TOSS_PAYMENT_SECRET_KEY:}
+      merchant-id: ${TOSS_PAYMENT_MERCHANT_ID:}
+      user-id: ${TOSS_PAYMENT_USER_ID:}
   outbox:
     publisher:
       enabled: ${OUTBOX_PUBLISHER_ENABLED:true}

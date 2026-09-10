@@ -187,19 +187,30 @@ paths:
   /api/v1/integrations/toss-payments/webhook:
     post:
       tags: [Integrations]
-      summary: Receive Toss Payments test webhook
-      description: Optional MVP adapter. It represents payments of the connected merchant, not the user's complete card history.
+      summary: Receive and verify a Toss Payments status webhook
+      description: Resolves paymentKey through the Toss Payments API. It represents the connected merchant, not the user's complete card history.
       operationId: receiveTossPaymentsWebhook
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/TossPaymentWebhookRequest'
       responses:
-        '202':
-          description: Webhook accepted
+        '200':
+          description: Verified event accepted or acknowledged as a duplicate
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TossPaymentWebhookResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '503':
+          description: Payment verification or integration configuration failed
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
 components:
   parameters:
     EventId:
@@ -230,6 +241,31 @@ components:
           schema:
             $ref: '#/components/schemas/Problem'
   schemas:
+    TossPaymentWebhookRequest:
+      type: object
+      required: [eventType, data]
+      properties:
+        eventType:
+          type: string
+        data:
+          type: object
+          required: [paymentKey]
+          properties:
+            paymentKey:
+              type: string
+              minLength: 1
+    TossPaymentWebhookResponse:
+      type: object
+      required: [ignored, acceptedCount, duplicateCount]
+      properties:
+        ignored:
+          type: boolean
+        acceptedCount:
+          type: integer
+          minimum: 0
+        duplicateCount:
+          type: integer
+          minimum: 0
     RegisterUserRequest:
       type: object
       required: [email, password]
@@ -295,7 +331,7 @@ components:
           format: uuid
         source:
           type: string
-          enum: [MANUAL_TEXT, SIMULATOR]
+          enum: [MANUAL_TEXT, SIMULATOR, TOSS_WEBHOOK]
         status:
           type: string
           enum: [RECEIVED, ANALYZING, NEEDS_REVIEW]
