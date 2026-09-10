@@ -7,21 +7,21 @@ import { AppHeader } from "@/features/navigation/AppHeader";
 type State = "confirming" | "success" | "failure";
 
 export function TossConfirmationView(props: { paymentKey: string; orderId: string; amount: string }) {
+  const amount = Number(props.amount);
+  const invalidRedirect = !props.paymentKey || !props.orderId || !Number.isSafeInteger(amount);
   const started = useRef(false);
-  const [state, setState] = useState<State>("confirming");
-  const [message, setMessage] = useState("Toss 승인 결과와 서버 주문을 대조하고 있습니다.");
+  const [state, setState] = useState<State>(invalidRedirect ? "failure" : "confirming");
+  const [message, setMessage] = useState(
+    invalidRedirect
+      ? "Toss가 전달한 결제 승인 정보가 올바르지 않습니다."
+      : "Toss 승인 결과와 서버 주문을 대조하고 있습니다.",
+  );
   const [canceling, setCanceling] = useState(false);
   const [canceled, setCanceled] = useState(false);
 
   useEffect(() => {
-    if (started.current) return;
+    if (invalidRedirect || started.current) return;
     started.current = true;
-    const amount = Number(props.amount);
-    if (!props.paymentKey || !props.orderId || !Number.isSafeInteger(amount)) {
-      setState("failure");
-      setMessage("Toss가 전달한 결제 승인 정보가 올바르지 않습니다.");
-      return;
-    }
     fetch(`/api/toss-test/orders/${encodeURIComponent(props.orderId)}/confirm`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -39,7 +39,7 @@ export function TossConfirmationView(props: { paymentKey: string; orderId: strin
         setState("failure");
         setMessage(error instanceof Error ? error.message : "결제 승인을 완료하지 못했습니다.");
       });
-  }, [props.amount, props.orderId, props.paymentKey]);
+  }, [amount, invalidRedirect, props.orderId, props.paymentKey]);
 
   async function cancelPayment() {
     if (canceling || canceled) return;
