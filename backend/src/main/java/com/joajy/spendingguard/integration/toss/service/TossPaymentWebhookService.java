@@ -38,7 +38,7 @@ public class TossPaymentWebhookService {
 
     public Result process(String eventType, String webhookPaymentKey) {
         if (!PAYMENT_STATUS_CHANGED.equals(eventType)) {
-            return Result.ignored();
+            return Result.ignoredResult();
         }
 
         UUID userId = properties.configuredUserId();
@@ -114,7 +114,7 @@ public class TossPaymentWebhookService {
     }
 
     public record Result(boolean ignored, int acceptedCount, int duplicateCount) {
-        static Result ignored() {
+        static Result ignoredResult() {
             return new Result(true, 0, 0);
         }
     }

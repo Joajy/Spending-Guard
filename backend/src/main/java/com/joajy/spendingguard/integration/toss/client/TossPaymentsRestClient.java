@@ -1,5 +1,6 @@
 package com.joajy.spendingguard.integration.toss.client;
 
+import java.net.http.HttpClient;
 import java.nio.charset.StandardCharsets;
 
 import com.joajy.spendingguard.integration.toss.config.TossPaymentProperties;
@@ -17,8 +18,10 @@ class TossPaymentsRestClient implements TossPaymentClient {
     private final TossPaymentProperties properties;
 
     TossPaymentsRestClient(RestClient.Builder builder, TossPaymentProperties properties) {
-        JdkClientHttpRequestFactory requestFactory = new JdkClientHttpRequestFactory();
-        requestFactory.setConnectTimeout(properties.connectTimeout());
+        HttpClient httpClient = HttpClient.newBuilder()
+                .connectTimeout(properties.connectTimeout())
+                .build();
+        JdkClientHttpRequestFactory requestFactory = new JdkClientHttpRequestFactory(httpClient);
         requestFactory.setReadTimeout(properties.readTimeout());
         this.restClient = builder
                 .baseUrl(properties.baseUrl().toString())
