@@ -14,6 +14,7 @@ public record TossPaymentProperties(
         URI baseUrl,
         Duration connectTimeout,
         Duration readTimeout,
+        String clientKey,
         String secretKey,
         String merchantId,
         String userId
@@ -43,5 +44,14 @@ public record TossPaymentProperties(
         } catch (IllegalArgumentException exception) {
             throw new IllegalStateException("Toss Payments 연결 사용자 ID 형식이 올바르지 않습니다.", exception);
         }
+    }
+
+    /** 브라우저 결제창 초기화에 사용할 공개 테스트 클라이언트 키를 반환한다. */
+    public String configuredClientKey() {
+        configuredUserId();
+        if (!StringUtils.hasText(clientKey)) {
+            throw new IllegalStateException("Toss Payments 클라이언트 키가 설정되지 않았습니다.");
+        }
+        return clientKey.trim();
     }
 }

@@ -45,6 +45,11 @@ public class TossPaymentWebhookService {
         Payment payment = tossPaymentClient.getPayment(webhookPaymentKey);
         verifyPayment(webhookPaymentKey, payment);
 
+        return processVerifiedPayment(userId, payment);
+    }
+
+    Result processVerifiedPayment(UUID userId, Payment payment) {
+
         Counter counter = new Counter();
         if (payment.approvedAt() != null && payment.totalAmount() > 0) {
             counter.record(submit(

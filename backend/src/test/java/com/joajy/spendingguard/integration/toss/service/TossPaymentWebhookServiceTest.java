@@ -52,6 +52,7 @@ class TossPaymentWebhookServiceTest {
                         URI.create("https://api.tosspayments.com"),
                         Duration.ofSeconds(2),
                         Duration.ofSeconds(5),
+                        "test_ck",
                         "test_sk",
                         "test-mid",
                         USER_ID.toString()

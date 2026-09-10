@@ -25,6 +25,7 @@
 
 ```text
 TOSS_PAYMENT_WEBHOOK_ENABLED=true
+SPENDING_GUARD_INTEGRATIONS_TOSS_PAYMENTS_CLIENT_KEY=test_ck_...
 TOSS_PAYMENT_SECRET_KEY=test_sk_...
 TOSS_PAYMENT_MERCHANT_ID=your_test_mid
 TOSS_PAYMENT_USER_ID=Spending Guard 사용자 UUID
@@ -33,6 +34,8 @@ TOSS_PAYMENT_READ_TIMEOUT=5s
 ```
 
 비밀 키는 저장소에 커밋하지 않는다. 운영 환경의 Secret 저장소에서 주입한다.
+클라이언트 키는 브라우저 결제창 초기화에 사용되며, 로그인한 연결 사용자에게만 서버가
+테스트 주문 응답으로 전달한다.
 
 Toss Payments 개발자센터에서 다음 URL을 `PAYMENT_STATUS_CHANGED` 웹훅으로 등록한다.
 
@@ -64,6 +67,20 @@ Content-Type: application/json
   "duplicateCount": 0
 }
 ```
+
+## 브라우저 시연
+
+로그인한 뒤 `/toss-test`로 이동하면 다음 전체 흐름을 확인할 수 있다.
+
+1. 서버가 사용자·금액·주문명을 묶은 테스트 주문을 PostgreSQL에 먼저 저장한다.
+2. Toss SDK v2 카드 결제창에서 가상 결제를 인증한다.
+3. 성공 URL이 받은 `paymentKey`, `orderId`, `amount`를 서버 주문과 대조한 뒤 승인한다.
+4. 승인 Payment 객체를 기존 Outbox/Kafka 파이프라인으로 즉시 접수한다.
+5. 성공 화면의 **전체 취소도 시연하기** 버튼으로 취소 이벤트와 예산 감소를 확인한다.
+
+결제 승인·취소 요청은 원자적 상태 전이로 선점하기 때문에 같은 버튼이나 요청을 동시에
+반복해도 Toss API를 중복 호출하지 않는다. Toss가 별도로 전송하는 웹훅은 기존 외부
+식별자 고유 제약에서 중복으로 정상 처리된다.
 
 ## 현재 한계와 다음 단계
 

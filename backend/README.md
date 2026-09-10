@@ -140,7 +140,7 @@ GitHub Actions 실행 요약에는 전체 테스트 통과율, 빠른 파서 회
 
 ## Toss Payments 테스트 웹훅
 
-연결한 Toss Payments 테스트 상점의 결제·취소를 자동 접수할 수 있습니다. 이는 사용자의
+연결한 Toss Payments 테스트 상점의 결제·취소를 자동 접수할 수 있으며, 로그인 후 프론트엔드의 `/toss-test`에서 테스트 결제부터 전체 취소까지 시연할 수 있습니다. 이는 사용자의
 전체 카드 결제 내역이 아니라 해당 상점에서 발생한 거래만 다룹니다. 필요한 환경 변수,
 검증 방식, 테스트 요청과 현재 한계는
 [`docs/integrations/toss-payments-webhook.md`](../docs/integrations/toss-payments-webhook.md)를

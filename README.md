@@ -14,7 +14,7 @@
 
 - 카드·은행 알림 텍스트를 붙여 넣으면 금액, 가맹점, 거래 시각과 유형을 자동으로 정리합니다.
 - 같은 알림이 여러 번 들어오더라도 소비 금액이 중복 반영되지 않도록 처리합니다.
-- 이후에는 CSV와 결제 테스트 연동을 추가해 입력 과정을 줄일 예정입니다.
+- Toss Payments 테스트 결제·취소를 웹훅으로 자동 수집해 입력 과정과 중복 반영을 줄입니다.
 
 ### 예산 및 소비 현황 관리
 
@@ -76,3 +76,11 @@ python scripts/smoke/full_stack_smoke.py
 ```
 
 개별 개발이 필요하면 `docker compose up -d postgres kafka mailpit`으로 기반 서비스만 실행한 뒤 백엔드와 프론트를 각각 실행할 수 있습니다. 프론트엔드는 Node.js 22 LTS를 권장합니다. 로컬 HTTP 실행에만 `SESSION_COOKIE_SECURE=false`를 사용하고 HTTPS 배포 환경에서는 `true`로 설정합니다.
+
+
+## Toss Payments 테스트 시연
+
+테스트 상점 키를 환경 변수로 설정한 뒤 로그인하고 `/toss-test`로 이동하면 결제창 호출,
+서버 승인, 소비 자동 접수와 전체 취소 반영까지 한 흐름으로 확인할 수 있습니다. 테스트
+거래에는 실제 금액이 청구되지 않습니다. 자세한 설정은
+[`docs/integrations/toss-payments-webhook.md`](docs/integrations/toss-payments-webhook.md)를 참고하세요.

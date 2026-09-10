@@ -50,4 +50,54 @@ class TossPaymentsRestClient implements TossPaymentClient {
             throw new TossPaymentVerificationException("Toss Payments 결제를 확인할 수 없습니다.", exception);
         }
     }
+
+    @Override
+    public Payment confirmPayment(String paymentKey, String orderId, long amount) {
+        try {
+            Payment payment = restClient.post()
+                    .uri("/v1/payments/confirm")
+                    .headers(headers -> headers.setBasicAuth(
+                            properties.secretKey(),
+                            "",
+                            StandardCharsets.UTF_8
+                    ))
+                    .body(new ConfirmPaymentRequest(paymentKey, orderId, amount))
+                    .retrieve()
+                    .body(Payment.class);
+            if (payment == null) {
+                throw new TossPaymentVerificationException("Toss Payments 결제 승인 결과가 비어 있습니다.");
+            }
+            return payment;
+        } catch (RestClientException exception) {
+            throw new TossPaymentVerificationException("Toss Payments 결제를 승인할 수 없습니다.", exception);
+        }
+    }
+
+    @Override
+    public Payment cancelPayment(String paymentKey, String reason) {
+        try {
+            Payment payment = restClient.post()
+                    .uri("/v1/payments/{paymentKey}/cancel", paymentKey)
+                    .headers(headers -> headers.setBasicAuth(
+                            properties.secretKey(),
+                            "",
+                            StandardCharsets.UTF_8
+                    ))
+                    .body(new CancelPaymentRequest(reason))
+                    .retrieve()
+                    .body(Payment.class);
+            if (payment == null) {
+                throw new TossPaymentVerificationException("Toss Payments 결제 취소 결과가 비어 있습니다.");
+            }
+            return payment;
+        } catch (RestClientException exception) {
+            throw new TossPaymentVerificationException("Toss Payments 결제를 취소할 수 없습니다.", exception);
+        }
+    }
+
+    private record ConfirmPaymentRequest(String paymentKey, String orderId, long amount) {
+    }
+
+    private record CancelPaymentRequest(String cancelReason) {
+    }
 }

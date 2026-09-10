@@ -10,6 +10,10 @@ public interface TossPaymentClient {
 
     Payment getPayment(String paymentKey);
 
+    Payment confirmPayment(String paymentKey, String orderId, long amount);
+
+    Payment cancelPayment(String paymentKey, String reason);
+
     @JsonIgnoreProperties(ignoreUnknown = true)
     record Payment(
             String mId,
