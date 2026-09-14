@@ -2,12 +2,16 @@ package com.joajy.spendingguard.spendevent.service;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import com.joajy.spendingguard.account.repository.UserAccountJpaRepository;
+import com.joajy.spendingguard.account.service.UserRegistrationService;
+import com.joajy.spendingguard.account.service.command.RegisterUserCommand;
 import com.joajy.spendingguard.outbox.repository.OutboxEventEntity;
 import com.joajy.spendingguard.outbox.repository.OutboxEventJpaRepository;
 import com.joajy.spendingguard.spendevent.service.command.SubmitSpendEventCommand;
@@ -48,10 +52,17 @@ class SpendEventPersistenceIntegrationTest {
     @Autowired
     private OutboxEventJpaRepository outboxEventRepository;
 
+    @Autowired
+    private UserRegistrationService registrationService;
+
+    @Autowired
+    private UserAccountJpaRepository userAccountRepository;
+
     @BeforeEach
     void cleanDatabase() {
         outboxEventRepository.deleteAll();
         rawSpendEventRepository.deleteAll();
+        userAccountRepository.deleteAll();
     }
 
     @Test
@@ -75,6 +86,42 @@ class SpendEventPersistenceIntegrationTest {
         assertThat(storedOutbox.getPayload())
                 .contains(receipt.eventId().toString(), "schemaVersion")
                 .doesNotContain("1234-5678-9012-3456");
+    }
+
+    @Test
+    void allowsIdenticalUndatedMessagesForDifferentUsers() {
+        UUID firstUser = registerUser("first@example.com");
+        UUID secondUser = registerUser("second@example.com");
+        SubmitSpendEventCommand first = new SubmitSpendEventCommand(
+                firstUser, SpendEventSource.MANUAL_TEXT, null, "쿠팡 12,800원 결제", null);
+        SubmitSpendEventCommand second = new SubmitSpendEventCommand(
+                secondUser, SpendEventSource.MANUAL_TEXT, null, "쿠팡 12,800원 결제", null);
+
+        spendEventService.submit(first);
+        spendEventService.submit(second);
+
+        assertThatThrownBy(() -> spendEventService.submit(first))
+                .isInstanceOf(DuplicateSpendEventException.class);
+        assertThat(rawSpendEventRepository.count()).isEqualTo(2);
+        assertThat(outboxEventRepository.count()).isEqualTo(2);
+    }
+
+    @Test
+    void scopesExternalEventIdsToTheirOwner() {
+        SubmitSpendEventCommand first = new SubmitSpendEventCommand(
+                registerUser("first@example.com"),
+                SpendEventSource.SIMULATOR, "shared-id", "상점 1,000원 결제", null);
+        SubmitSpendEventCommand second = new SubmitSpendEventCommand(
+                registerUser("second@example.com"),
+                SpendEventSource.SIMULATOR, "shared-id", "상점 2,000원 결제", null);
+
+        spendEventService.submit(first);
+        spendEventService.submit(second);
+
+        assertThatThrownBy(() -> spendEventService.submit(second))
+                .isInstanceOf(DuplicateSpendEventException.class);
+        assertThat(rawSpendEventRepository.count()).isEqualTo(2);
+        assertThat(outboxEventRepository.count()).isEqualTo(2);
     }
 
     @Test
@@ -165,6 +212,10 @@ class SpendEventPersistenceIntegrationTest {
         } catch (DuplicateSpendEventException exception) {
             return Result.DUPLICATE;
         }
+    }
+
+    private UUID registerUser(String email) {
+        return registrationService.register(new RegisterUserCommand(email, "safe-password-123")).userId();
     }
 
     private Result get(Future<Result> future) {

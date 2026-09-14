@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
  * 커밋 시점까지 오류를 미루지 않으므로 PostgreSQL의 중복 키 위반을 즉시
  * {@link DuplicateSpendEventException}으로 변환할 수 있다.
  *
- * <p>중복 판정의 최종 기준은 {@code deduplication_key} 고유 제약이다. 애플리케이션의
+ * <p>중복 판정의 최종 기준은 {@code (user_id, deduplication_key)} 고유 제약이다. 애플리케이션의
  * 조회-후-저장 경쟁 조건 없이 동시에 도착한 요청 중 하나만 성공한다.
  */
 @Component
