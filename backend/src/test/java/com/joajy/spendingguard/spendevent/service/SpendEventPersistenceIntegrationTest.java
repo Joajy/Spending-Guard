@@ -125,6 +125,33 @@ class SpendEventPersistenceIntegrationTest {
     }
 
     @Test
+    void acceptsConcurrentMatchingExternalIdsFromDifferentUsers() throws Exception {
+        CountDownLatch start = new CountDownLatch(1);
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        SubmitSpendEventCommand first = new SubmitSpendEventCommand(
+                registerUser("first@example.com"),
+                SpendEventSource.SIMULATOR, "shared-concurrent-id", "상점 1,000원 결제", null);
+        SubmitSpendEventCommand second = new SubmitSpendEventCommand(
+                registerUser("second@example.com"),
+                SpendEventSource.SIMULATOR, "shared-concurrent-id", "상점 2,000원 결제", null);
+
+        try {
+            List<Future<Result>> results = List.of(
+                    executor.submit(() -> submitAfter(start, first)),
+                    executor.submit(() -> submitAfter(start, second))
+            );
+            start.countDown();
+
+            assertThat(results.stream().map(this::get).toList())
+                    .containsExactly(Result.ACCEPTED, Result.ACCEPTED);
+            assertThat(rawSpendEventRepository.count()).isEqualTo(2);
+            assertThat(outboxEventRepository.count()).isEqualTo(2);
+        } finally {
+            executor.shutdownNow();
+        }
+    }
+
+    @Test
     void rejectsRepeatedExternalEventIdWithoutAddingRows() {
         SubmitSpendEventCommand first = new SubmitSpendEventCommand(
                 SpendEventSource.SIMULATOR,
