@@ -714,6 +714,29 @@ Prometheus 설정과 경보 표현식은 공식 `promtool`로 검증했지만 �
 
 증빙: [Backend CI·Postman](https://github.com/Joajy/Spending-Guard/actions/runs/33690252373), [Container images](https://github.com/Joajy/Spending-Guard/actions/runs/33690252409), [Deployment config](https://github.com/Joajy/Spending-Guard/actions/runs/33690252342), [Full-stack smoke](https://github.com/Joajy/Spending-Guard/actions/runs/33690252383)
 
+### 사용자별 소비 중복 판정 검증
+
+기준: `fix/user-scoped-deduplication`, Backend CI·Postman·Full-stack smoke, 2026-09-14
+
+| 구분 | 결과 |
+|---|---:|
+| 사용자 경계 PostgreSQL 통합 테스트 | 3/3 통과 |
+| V16→V17 마이그레이션 테스트 | 1/1 통과 |
+| 백엔드 테스트 | 221/221 통과 |
+| 백엔드 라인 커버리지 | 86.97% |
+| 백엔드 브랜치 커버리지 | 71.76% |
+| Postman 요청 | 25/25 성공 |
+| Postman assertion | 54/54 통과 |
+| Postman 평균 응답 시간 | 110.32ms |
+| 전체 서비스 스모크 검증 | 1/1 통과 |
+| 최종 실패 job | 0건 |
+
+동일한 결제 문구와 외부 이벤트 ID를 서로 다른 두 사용자에게 제출했을 때 두 건이 모두 저장되는지 확인했다. 같은 사용자가 같은 요청을 다시 제출하면 한 건만 남아 재전송 중복 방어가 유지되는 것도 함께 검증했다. 기존 중복 해시값은 변경하지 않고 PostgreSQL 고유 제약의 범위만 사용자 단위로 조정해 마이그레이션 이전 이벤트의 재시도 판정이 달라지지 않게 했다.
+
+이번 커버리지는 Toss 결제 연동이 포함된 최신 전체 코드 기준이다. 이전 릴리스 준비 시점과 측정 대상 코드가 다르므로 수치 하락을 기존 코드의 회귀로 단정하지 않는다.
+
+증빙: [Backend CI·Postman](https://github.com/Joajy/Spending-Guard/actions/runs/34851686155), [Deployment config](https://github.com/Joajy/Spending-Guard/actions/runs/34851686134), [Full-stack smoke](https://github.com/Joajy/Spending-Guard/actions/runs/34851686125)
+
 ## 수치 해석 기준
 
 - `100% 파서 정답률`은 고정된 25건의 회귀 데이터셋에 대한 결과다. 금융 알림 전체나 운영 환경의 일반 정확도를 의미하지 않는다.

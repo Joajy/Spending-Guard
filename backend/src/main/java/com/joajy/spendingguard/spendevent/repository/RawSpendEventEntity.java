@@ -12,6 +12,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 
 /**
  * 원천 소비 이벤트를 {@code raw_spend_event} 테이블에 매핑하는 JPA 엔티티다.
@@ -29,7 +30,10 @@ import jakarta.persistence.Table;
  * 개인정보를 탐지한다고 보장하지 않으므로 실제 연동 전 채널별 규칙이 추가되어야 한다.
  */
 @Entity
-@Table(name = "raw_spend_event")
+@Table(name = "raw_spend_event", uniqueConstraints = @UniqueConstraint(
+        name = "uk_raw_spend_event_user_deduplication_key",
+        columnNames = {"user_id", "deduplication_key"}
+))
 public class RawSpendEventEntity {
 
     @Id
@@ -45,7 +49,7 @@ public class RawSpendEventEntity {
     @Column(name = "external_event_id", length = 200)
     private String externalEventId;
 
-    @Column(name = "deduplication_key", nullable = false, length = 64, unique = true)
+    @Column(name = "deduplication_key", nullable = false, length = 64)
     private String deduplicationKey;
 
     @Column(name = "sanitized_message", nullable = false, length = 2000)
