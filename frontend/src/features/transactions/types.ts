@@ -8,7 +8,7 @@ export type SpendCategory =
   | "OTHER";
 export type RiskLevel = "LOW" | "MEDIUM" | "HIGH";
 export type TransactionType = "PAYMENT" | "CANCEL" | "REFUND";
-export type SpendEventSource = "MANUAL_TEXT" | "SIMULATOR";
+export type SpendEventSource = "MANUAL_TEXT" | "SIMULATOR" | "TOSS_WEBHOOK";
 export type FastParseStatus = "PARSED" | "NEEDS_REVIEW";
 
 export type SpendEventHistoryItem = {

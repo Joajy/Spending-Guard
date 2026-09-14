@@ -30,6 +30,7 @@ export const RISK_LABELS: Record<RiskLevel, string> = {
 export const SOURCE_LABELS: Record<SpendEventSource, string> = {
   MANUAL_TEXT: "직접 입력",
   SIMULATOR: "테스트 연동",
+  TOSS_WEBHOOK: "Toss 자동 연동",
 };
 
 const RISK_REASON_LABELS: Record<string, string> = {

@@ -21,13 +21,13 @@ describe("AppHeader", () => {
   });
 
   it("shows every service destination and marks the current page", () => {
-    pathname = "/transactions/new";
+    pathname = "/toss-test";
     render(<AppHeader />);
 
     expect(screen.getByRole("navigation", { name: "주요 메뉴" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "소비 등록" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: "Toss 테스트" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("link", { name: "소비 내역" })).not.toHaveAttribute("aria-current");
-    expect(screen.getAllByRole("link")).toHaveLength(6);
+    expect(screen.getAllByRole("link")).toHaveLength(7);
   });
 
   it("opens the mobile menu and closes it after navigation", async () => {

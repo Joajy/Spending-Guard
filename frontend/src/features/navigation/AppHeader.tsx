@@ -7,6 +7,7 @@ import { useState } from "react";
 const NAVIGATION_ITEMS = [
   { href: "/dashboard", label: "대시보드" },
   { href: "/transactions/new", label: "소비 등록" },
+  { href: "/toss-test", label: "Toss 테스트" },
   { href: "/transactions", label: "소비 내역" },
   { href: "/budget", label: "예산" },
   { href: "/alerts", label: "위험 알림" },

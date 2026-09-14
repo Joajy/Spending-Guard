@@ -71,6 +71,22 @@ paths:
       summary: Get processing status and result
       operationId: getSpendEvent
       parameters:
+
+    UserId:
+      name: userId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    OrderId:
+      name: orderId
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 6
+        maxLength: 64
         - $ref: '#/components/parameters/EventId'
       responses:
         '200':
@@ -187,19 +203,105 @@ paths:
   /api/v1/integrations/toss-payments/webhook:
     post:
       tags: [Integrations]
-      summary: Receive Toss Payments test webhook
-      description: Optional MVP adapter. It represents payments of the connected merchant, not the user's complete card history.
+      summary: Receive and verify a Toss Payments status webhook
+      description: Resolves paymentKey through the Toss Payments API. It represents the connected merchant, not the user's complete card history.
       operationId: receiveTossPaymentsWebhook
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/TossPaymentWebhookRequest'
       responses:
-        '202':
-          description: Webhook accepted
+        '200':
+          description: Verified event accepted or acknowledged as a duplicate
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TossPaymentWebhookResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '503':
+          description: Payment verification or integration configuration failed
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  /api/v1/users/{userId}/integrations/toss-payments/test-orders:
+    post:
+      tags: [Integrations]
+      summary: Create a server-bound Toss Payments test order
+      operationId: createTossTestOrder
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTossTestOrderRequest'
+      responses:
+        '200':
+          description: Test order and public client key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TossTestOrder'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '503':
+          description: Toss Payments integration is not configured
+  /api/v1/users/{userId}/integrations/toss-payments/test-orders/{orderId}/confirm:
+    post:
+      tags: [Integrations]
+      summary: Confirm and ingest a Toss Payments test order
+      operationId: confirmTossTestOrder
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+        - $ref: '#/components/parameters/OrderId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfirmTossTestOrderRequest'
+      responses:
+        '200':
+          description: Confirmed payment ingestion result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TossTestOrderResult'
+        '409':
+          description: Order has already been processed or does not match
+        '503':
+          description: Toss Payments confirmation failed
+  /api/v1/users/{userId}/integrations/toss-payments/test-orders/{orderId}/cancel:
+    post:
+      tags: [Integrations]
+      summary: Fully cancel and ingest a confirmed Toss Payments test order
+      operationId: cancelTossTestOrder
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+        - $ref: '#/components/parameters/OrderId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CancelTossTestOrderRequest'
+      responses:
+        '200':
+          description: Canceled payment ingestion result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TossTestOrderResult'
+        '409':
+          description: Order has already been processed or does not match
+        '503':
+          description: Toss Payments cancellation failed
+
 components:
   parameters:
     EventId:
@@ -230,6 +332,94 @@ components:
           schema:
             $ref: '#/components/schemas/Problem'
   schemas:
+
+    CreateTossTestOrderRequest:
+      type: object
+      required: [amount]
+      properties:
+        amount:
+          type: integer
+          format: int64
+          minimum: 100
+          maximum: 1000000
+        orderName:
+          type: string
+          maxLength: 100
+    TossTestOrder:
+      type: object
+      required: [orderId, clientKey, amount, orderName]
+      properties:
+        orderId:
+          type: string
+        clientKey:
+          type: string
+          description: Public Toss Payments client key
+        amount:
+          type: integer
+          format: int64
+        orderName:
+          type: string
+    ConfirmTossTestOrderRequest:
+      type: object
+      required: [paymentKey, amount]
+      properties:
+        paymentKey:
+          type: string
+          maxLength: 200
+        amount:
+          type: integer
+          format: int64
+          minimum: 100
+          maximum: 1000000
+    CancelTossTestOrderRequest:
+      type: object
+      required: [paymentKey]
+      properties:
+        paymentKey:
+          type: string
+          maxLength: 200
+    TossTestOrderResult:
+      type: object
+      required: [paymentKey, orderId, status, acceptedCount, duplicateCount]
+      properties:
+        paymentKey:
+          type: string
+        orderId:
+          type: string
+        status:
+          type: string
+          enum: [DONE, CANCELED]
+        acceptedCount:
+          type: integer
+          minimum: 0
+        duplicateCount:
+          type: integer
+          minimum: 0
+    TossPaymentWebhookRequest:
+      type: object
+      required: [eventType, data]
+      properties:
+        eventType:
+          type: string
+        data:
+          type: object
+          required: [paymentKey]
+          properties:
+            paymentKey:
+              type: string
+              minLength: 1
+    TossPaymentWebhookResponse:
+      type: object
+      required: [ignored, acceptedCount, duplicateCount]
+      properties:
+        ignored:
+          type: boolean
+        acceptedCount:
+          type: integer
+          minimum: 0
+        duplicateCount:
+          type: integer
+          minimum: 0
     RegisterUserRequest:
       type: object
       required: [email, password]
@@ -295,7 +485,7 @@ components:
           format: uuid
         source:
           type: string
-          enum: [MANUAL_TEXT, SIMULATOR]
+          enum: [MANUAL_TEXT, SIMULATOR, TOSS_WEBHOOK]
         status:
           type: string
           enum: [RECEIVED, ANALYZING, NEEDS_REVIEW]
