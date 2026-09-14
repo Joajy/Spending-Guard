@@ -721,12 +721,13 @@ Prometheus 설정과 경보 표현식은 공식 `promtool`로 검증했지만 �
 | 구분 | 결과 |
 |---|---:|
 | 사용자 경계 PostgreSQL 통합 테스트 | 2/2 통과 |
-| 백엔드 테스트 | 219/219 통과 |
+| V16→V17 마이그레이션 테스트 | 1/1 통과 |
+| 백엔드 테스트 | 220/220 통과 |
 | 백엔드 라인 커버리지 | 86.97% |
 | 백엔드 브랜치 커버리지 | 71.76% |
 | Postman 요청 | 25/25 성공 |
 | Postman assertion | 54/54 통과 |
-| Postman 평균 응답 시간 | 108.64ms |
+| Postman 평균 응답 시간 | 77.32ms |
 | 전체 서비스 스모크 검증 | 1/1 통과 |
 | 최종 실패 job | 0건 |
 
@@ -734,7 +735,7 @@ Prometheus 설정과 경보 표현식은 공식 `promtool`로 검증했지만 �
 
 이번 커버리지는 Toss 결제 연동이 포함된 최신 전체 코드 기준이다. 이전 릴리스 준비 시점과 측정 대상 코드가 다르므로 수치 하락을 기존 코드의 회귀로 단정하지 않는다.
 
-증빙: [Backend CI·Postman](https://github.com/Joajy/Spending-Guard/actions/runs/34848207285), [Deployment config](https://github.com/Joajy/Spending-Guard/actions/runs/34848207513), [Full-stack smoke](https://github.com/Joajy/Spending-Guard/actions/runs/34848207223)
+증빙: [Backend CI·Postman](https://github.com/Joajy/Spending-Guard/actions/runs/34850110866), [Deployment config](https://github.com/Joajy/Spending-Guard/actions/runs/34850110826), [Full-stack smoke](https://github.com/Joajy/Spending-Guard/actions/runs/34850111000)
 
 ## 수치 해석 기준
 
