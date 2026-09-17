@@ -9,6 +9,7 @@ on:
       - "VERSION"
       - "CHANGELOG.md"
       - "deploy/.env.example"
+      - ".gitattributes"
       - ".github/workflows/container-images.yml"
   push:
     tags:

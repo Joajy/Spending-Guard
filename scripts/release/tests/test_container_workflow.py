@@ -5,6 +5,7 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[3]
 WORKFLOW = ROOT / ".github" / "workflows" / "container-images.yml"
+GIT_ATTRIBUTES = ROOT / ".gitattributes"
 
 
 class ContainerWorkflowContractTest(unittest.TestCase):
@@ -51,6 +52,12 @@ class ContainerWorkflowContractTest(unittest.TestCase):
 
         self.assertIn("USER spendingguard", backend)
         self.assertIn("USER nextjs", frontend)
+
+    def test_gradle_wrapper_uses_unix_line_endings_in_container_context(self):
+        attributes = GIT_ATTRIBUTES.read_text(encoding="utf-8")
+
+        self.assertRegex(attributes, r"(?m)^backend/gradlew text eol=lf$")
+        self.assertIn('- ".gitattributes"', self.workflow)
 
 
 if __name__ == "__main__":
