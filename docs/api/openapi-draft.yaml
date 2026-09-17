@@ -488,7 +488,7 @@ components:
           enum: [MANUAL_TEXT, SIMULATOR, TOSS_WEBHOOK]
         status:
           type: string
-          enum: [RECEIVED, ANALYZING, NEEDS_REVIEW]
+          enum: [RECEIVED, ANALYZING, COMPLETED, NEEDS_REVIEW]
         occurredAt:
           type: [string, 'null']
           format: date-time

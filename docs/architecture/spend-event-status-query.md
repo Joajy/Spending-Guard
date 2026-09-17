@@ -28,5 +28,5 @@ sequenceDiagram
 - `fastParse=null`은 실패가 아니라 아직 분석되지 않은 정상 상태다.
 - 존재하지 않는 이벤트는 `404 application/problem+json`, 잘못된 UUID는 `400 application/problem+json`으로 구분한다.
 
-향후 프론트엔드는 `Location`을 따라 이 API를 조회하고, `RECEIVED` 상태에는 처리 중 안내를, `NEEDS_REVIEW` 상태에는 사용자 확인 화면을 표시할 수 있다.
+프론트엔드는 `Location`을 따라 이 API를 조회하고, `RECEIVED`·`ANALYZING` 상태에는 처리 중 안내를, `COMPLETED`에는 분석 완료 결과를, `NEEDS_REVIEW`에는 사용자 확인 화면을 표시한다.
 

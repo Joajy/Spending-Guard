@@ -99,7 +99,7 @@ public class SpendEventProcessingService implements ProcessSpendEventUseCase {
             );
         }
 
-        updateSpendEventStatusPort.update(command.eventId(), SpendEventStatus.ANALYZING);
+        updateSpendEventStatusPort.update(command.eventId(), SpendEventStatus.COMPLETED);
         return SpendEventProcessingResult.PROCESSED;
     }
 

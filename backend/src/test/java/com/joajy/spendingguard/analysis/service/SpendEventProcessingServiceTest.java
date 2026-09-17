@@ -59,7 +59,7 @@ class SpendEventProcessingServiceTest {
     }
 
     @Test
-    void storesFastParseResultAndMovesEventToAnalyzing() {
+    void storesFastParseResultAndCompletesEvent() {
         UUID eventId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
         given(tryClaimProcessedEventPort.tryClaim(eventId, SpendEventProcessingService.CONSUMER_NAME, NOW))
@@ -74,7 +74,7 @@ class SpendEventProcessingServiceTest {
         verify(storeFastParseResultPort).store(
                 eq(eventId), any(), any(), eq(SpendEventProcessingService.PARSER_VERSION), eq(NOW)
         );
-        verify(updateSpendEventStatusPort).update(eventId, SpendEventStatus.ANALYZING);
+        verify(updateSpendEventStatusPort).update(eventId, SpendEventStatus.COMPLETED);
         verify(applyBudgetConsumptionPort).apply(
                 userId, eventId, YearMonth.of(2026, 8), 12_800L, NOW
         );

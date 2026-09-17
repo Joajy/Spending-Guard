@@ -18,6 +18,7 @@ export const CATEGORY_LABELS: Record<SpendCategory, string> = {
 export const STATUS_LABELS: Record<SpendEventStatus, string> = {
   RECEIVED: "접수됨",
   ANALYZING: "분석 중",
+  COMPLETED: "분석 완료",
   NEEDS_REVIEW: "확인 필요",
 };
 

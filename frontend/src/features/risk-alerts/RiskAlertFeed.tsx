@@ -277,7 +277,7 @@ function asHistoryItem(item: RiskAlertItem): SpendEventHistoryItem {
   return {
     eventId: item.eventId,
     displayText: item.displayText,
-    status: "ANALYZING",
+    status: "COMPLETED",
     transactionAt: item.transactionAt,
     amount: item.amount,
     currency: "KRW",

@@ -249,6 +249,7 @@ a { color: inherit; text-decoration: none; }
 .transaction-labels > span { padding: 3px 7px; border-radius: 6px; background: #f3f5f8; }
 .transaction-labels .status-chip.needs_review { color: #a65f10; background: #fff4de; }
 .transaction-labels .status-chip.analyzing { color: #435ac7; background: var(--blue-soft); }
+.transaction-labels .status-chip.completed { color: #17734b; background: #e8f7ef; }
 .transaction-labels .risk-chip.high { color: #bc4c48; background: #fff0ee; }
 .transaction-labels .risk-chip.medium { color: #a65f10; background: #fff4de; }
 .transaction-amount { justify-self: end; font-size: 16px; letter-spacing: -.02em; white-space: nowrap; }

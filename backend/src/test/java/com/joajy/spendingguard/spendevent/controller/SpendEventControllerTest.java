@@ -112,7 +112,7 @@ class SpendEventControllerTest {
         given(getSpendEventUseCase.get(USER_ID, eventId)).willReturn(new SpendEventDetail(
                 eventId,
                 SpendEventSource.SIMULATOR,
-                SpendEventStatus.ANALYZING,
+                SpendEventStatus.COMPLETED,
                 Instant.parse("2026-08-13T01:00:00Z"),
                 Instant.parse("2026-08-13T01:30:00Z"),
                 new FastParseResult(
@@ -134,7 +134,7 @@ class SpendEventControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.eventId").value(eventId.toString()))
                 .andExpect(jsonPath("$.source").value("SIMULATOR"))
-                .andExpect(jsonPath("$.status").value("ANALYZING"))
+                .andExpect(jsonPath("$.status").value("COMPLETED"))
                 .andExpect(jsonPath("$.fastParse.amount").value(12800))
                 .andExpect(jsonPath("$.fastParse.currency").value("KRW"))
                 .andExpect(jsonPath("$.fastParse.transactionType").value("PAYMENT"))

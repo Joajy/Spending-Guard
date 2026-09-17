@@ -193,6 +193,7 @@ export function TransactionHistoryView({ initialMonth }: Props) {
               <option value="">전체 상태</option>
               <option value="RECEIVED">접수됨</option>
               <option value="ANALYZING">분석 중</option>
+              <option value="COMPLETED">분석 완료</option>
               <option value="NEEDS_REVIEW">확인 필요</option>
             </select>
           </label>

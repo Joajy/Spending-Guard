@@ -4,6 +4,7 @@ import Link from "next/link";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AppHeader } from "@/features/navigation/AppHeader";
+import { STATUS_LABELS } from "./format";
 import type { SpendEventDetail, SpendEventStatus } from "./types";
 
 type AcceptedEvent = { eventId: string; status: SpendEventStatus; receivedAt: string };
@@ -122,7 +123,7 @@ export function SpendEventSubmissionView() {
                 <h2>{detail?.fastParse ? "분석 결과" : "안전하게 접수됨"}</h2>
                 <p className="muted">{statusMessage}</p>
                 <dl className="ingestion-result">
-                  <div><dt>처리 상태</dt><dd>{statusLabel(detail?.status ?? accepted.status)}</dd></div>
+                  <div><dt>처리 상태</dt><dd>{STATUS_LABELS[detail?.status ?? accepted.status]}</dd></div>
                   {detail?.fastParse?.amount != null && <div><dt>금액</dt><dd>{detail.fastParse.amount.toLocaleString("ko-KR")}원</dd></div>}
                   {detail?.fastParse?.category && <div><dt>카테고리</dt><dd>{detail.fastParse.category}</dd></div>}
                   {detail?.fastParse?.riskLevel && <div><dt>위험도</dt><dd>{detail.fastParse.riskLevel}</dd></div>}
@@ -136,10 +137,4 @@ export function SpendEventSubmissionView() {
       </main>
     </div>
   );
-}
-
-function statusLabel(status: SpendEventStatus): string {
-  if (status === "RECEIVED") return "접수됨";
-  if (status === "ANALYZING") return "분석 중";
-  return "사용자 확인 필요";
 }

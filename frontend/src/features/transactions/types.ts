@@ -1,4 +1,4 @@
-export type SpendEventStatus = "RECEIVED" | "ANALYZING" | "NEEDS_REVIEW";
+export type SpendEventStatus = "RECEIVED" | "ANALYZING" | "COMPLETED" | "NEEDS_REVIEW";
 export type SpendCategory =
   | "SUBSCRIPTION"
   | "TRANSPORT"
