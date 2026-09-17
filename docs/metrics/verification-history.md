@@ -755,6 +755,33 @@ Prometheus 설정과 경보 표현식은 공식 `promtool`로 검증했지만 �
 
 증빙: [Container images](https://github.com/Joajy/Spending-Guard/actions/runs/35209223427)
 
+### 소비 분석 완료 상태 검증
+
+기준: `fix/spend-analysis-status-lifecycle`, Backend CI·Frontend CI·Full-stack smoke·Container images, 2026-09-17
+
+| 구분 | 결과 |
+|---|---:|
+| 백엔드 테스트 | 221/221 통과 |
+| 백엔드 라인 커버리지 | 86.98% |
+| 백엔드 브랜치 커버리지 | 71.76% |
+| 빠른 파서 회귀 데이터셋 | 25/25 정답 |
+| 위험 분류 회귀 데이터셋 | 15/15 정답 |
+| 프론트엔드 테스트 | 143/143 통과 |
+| 프론트엔드 라인 커버리지 | 86.55% |
+| 프론트엔드 브랜치 커버리지 | 82.00% |
+| Postman 요청 | 25/25 성공 |
+| Postman assertion | 54/54 통과 |
+| Postman 평균 응답 시간 | 74.00ms |
+| 전체 서비스 사용자 여정 | 1/1 통과 |
+| 컨테이너 이미지 빌드 | 2/2 성공 |
+| 최종 실패 job | 0건 |
+
+빠른 파싱, 위험 판정과 예산 반영이 끝난 성공 이벤트를 `COMPLETED`로 저장하고 API와 화면에서도 `분석 완료`로 표시하도록 상태 계약을 맞췄다. 필수 값을 확정하지 못한 이벤트는 기존처럼 `NEEDS_REVIEW`로 종료되며, `ANALYZING`은 처리 중 이벤트와 기존 데이터 조회 호환을 위해 유지한다.
+
+PostgreSQL·Kafka 통합 테스트를 포함한 백엔드 전체 검증, 프론트엔드 상태 표시와 필터 검증, 가입부터 소비 분석까지의 전체 서비스 사용자 여정과 두 컨테이너 이미지 빌드를 통과했다. 평균 응답 시간은 공유 CI의 단일 Postman 실행값이며 상태 전이 변경 자체의 성능 개선 수치로 해석하지 않는다.
+
+증빙: [Backend CI·Postman](https://github.com/Joajy/Spending-Guard/actions/runs/35211282879), [Frontend CI](https://github.com/Joajy/Spending-Guard/actions/runs/35211282865), [Full-stack smoke](https://github.com/Joajy/Spending-Guard/actions/runs/35211282868), [Container images](https://github.com/Joajy/Spending-Guard/actions/runs/35211282900)
+
 ## 수치 해석 기준
 
 - `100% 파서 정답률`은 고정된 25건의 회귀 데이터셋에 대한 결과다. 금융 알림 전체나 운영 환경의 일반 정확도를 의미하지 않는다.
