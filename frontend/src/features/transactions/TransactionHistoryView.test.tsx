@@ -16,7 +16,7 @@ vi.mock("next/navigation", () => ({
 const payment: SpendEventHistoryItem = {
   eventId: "11111111-1111-1111-1111-111111111111",
   displayText: "쿠팡 12,800원 결제",
-  status: "ANALYZING",
+  status: "COMPLETED",
   transactionAt: "2026-08-27T00:30:00Z",
   amount: 12_800,
   currency: "KRW",
@@ -67,6 +67,7 @@ describe("TransactionHistoryView", () => {
     expect(history.getByText("쇼핑")).toBeInTheDocument();
     expect(history.getByText("-12,800원")).toBeInTheDocument();
     expect(history.getByText("주의")).toBeInTheDocument();
+    expect(history.getByText("분석 완료")).toBeInTheDocument();
   });
 
   it("reloads when status and category filters change", async () => {
@@ -131,7 +132,7 @@ describe("TransactionHistoryView", () => {
     const detail = {
       eventId: payment.eventId,
       source: "MANUAL_TEXT",
-      status: "ANALYZING",
+      status: "COMPLETED",
       occurredAt: "2026-08-27T00:30:00Z",
       receivedAt: "2026-08-27T00:30:01Z",
       fastParse: {

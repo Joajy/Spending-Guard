@@ -85,7 +85,7 @@ class SpendEventQueryPersistenceIntegrationTest {
 
         SpendEventDetail detail = queryService.get(receipt.eventId());
 
-        assertThat(detail.status()).isEqualTo(SpendEventStatus.ANALYZING);
+        assertThat(detail.status()).isEqualTo(SpendEventStatus.COMPLETED);
         assertThat(detail.fastParse()).isNotNull();
         assertThat(detail.fastParse().amount()).isEqualByComparingTo("28000");
         assertThat(detail.fastParse().transactionType()).isEqualTo("PAYMENT");
@@ -110,4 +110,3 @@ class SpendEventQueryPersistenceIntegrationTest {
         ));
     }
 }
-

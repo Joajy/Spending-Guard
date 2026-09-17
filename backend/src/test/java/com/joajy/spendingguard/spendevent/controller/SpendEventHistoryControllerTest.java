@@ -48,13 +48,13 @@ class SpendEventHistoryControllerTest {
     void returnsFilteredTransactionHistory() throws Exception {
         UUID eventId = UUID.fromString("9bbd364c-a952-42aa-91cb-f607603aa7d5");
         given(listSpendEventsUseCase.list(
-                USER_ID, YearMonth.of(2026, 8), SpendEventStatus.ANALYZING,
+                USER_ID, YearMonth.of(2026, 8), SpendEventStatus.COMPLETED,
                 "SHOPPING", null, 20
         )).willReturn(new SpendEventHistoryPage(
                 List.of(new SpendEventHistoryItem(
                         eventId,
                         "쿠팡 **,***원 결제",
-                        SpendEventStatus.ANALYZING,
+                        SpendEventStatus.COMPLETED,
                         Instant.parse("2026-08-18T01:00:00Z"),
                         new BigDecimal("12800"),
                         "PAYMENT",
@@ -69,7 +69,7 @@ class SpendEventHistoryControllerTest {
 
         mockMvc.perform(get("/api/v1/users/{userId}/spend-events", USER_ID)
                         .param("month", "2026-08")
-                        .param("status", "ANALYZING")
+                        .param("status", "COMPLETED")
                         .param("category", "SHOPPING"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.items[0].eventId").value(eventId.toString()))
@@ -81,7 +81,7 @@ class SpendEventHistoryControllerTest {
                 .andExpect(jsonPath("$.hasNext").value(true));
 
         verify(listSpendEventsUseCase).list(
-                USER_ID, YearMonth.of(2026, 8), SpendEventStatus.ANALYZING,
+                USER_ID, YearMonth.of(2026, 8), SpendEventStatus.COMPLETED,
                 "SHOPPING", null, 20
         );
     }

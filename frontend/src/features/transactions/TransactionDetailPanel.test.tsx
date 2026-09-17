@@ -15,7 +15,7 @@ vi.mock("next/navigation", () => ({ useRouter: () => router }));
 const item: SpendEventHistoryItem = {
   eventId: "11111111-1111-4111-8111-111111111111",
   displayText: "쿠팡 12,800원 결제",
-  status: "ANALYZING",
+  status: "COMPLETED",
   transactionAt: "2026-08-27T00:30:00Z",
   amount: 12_800,
   currency: "KRW",
@@ -29,7 +29,7 @@ const item: SpendEventHistoryItem = {
 const detail: SpendEventDetail = {
   eventId: item.eventId,
   source: "MANUAL_TEXT",
-  status: "ANALYZING",
+  status: "COMPLETED",
   occurredAt: "2026-08-27T00:30:00Z",
   receivedAt: "2026-08-27T00:30:01Z",
   fastParse: {
@@ -73,6 +73,7 @@ describe("TransactionDetailPanel", () => {
     render(<TransactionDetailPanel item={item} onClose={vi.fn()} onCorrected={vi.fn()} />);
 
     expect(await screen.findByText("직접 입력")).toBeInTheDocument();
+    expect(screen.getByText("분석 완료")).toBeInTheDocument();
     expect(screen.getByText("주의해서 확인할 금액대의 결제입니다.")).toBeInTheDocument();
     expect(screen.getByText("분석 기준 fast-v1")).toBeInTheDocument();
   });

@@ -19,7 +19,7 @@ const receipt = {
 const analyzed = {
   eventId: receipt.eventId,
   source: "MANUAL_TEXT",
-  status: "ANALYZING",
+  status: "COMPLETED",
   occurredAt: "2026-08-31T12:30:00Z",
   receivedAt: receipt.receivedAt,
   fastParse: {
@@ -57,7 +57,7 @@ describe("SpendEventSubmissionView", () => {
 
     expect(await screen.findByText("12,800원")).toBeVisible();
     expect(screen.getByText("SHOPPING")).toBeVisible();
-    expect(screen.getByText("분석 중")).toBeVisible();
+    expect(screen.getByText("분석 완료")).toBeVisible();
     expect(request).toHaveBeenNthCalledWith(1, "/api/transactions", expect.objectContaining({ method: "POST" }));
     expect(request).toHaveBeenNthCalledWith(2, `/api/transactions/${receipt.eventId}`, { cache: "no-store" });
   });

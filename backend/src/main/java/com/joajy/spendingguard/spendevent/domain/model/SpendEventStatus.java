@@ -11,6 +11,8 @@ public enum SpendEventStatus {
     RECEIVED,
     /** 빠른 파싱이 끝나고 외부 분석 또는 규칙 보강을 기다리는 상태. */
     ANALYZING,
+    /** 분석 결과와 예산 반영까지 정상적으로 끝난 상태. */
+    COMPLETED,
     /** 필수 정보를 규칙으로 확정하지 못해 사용자 확인이 필요한 상태. */
     NEEDS_REVIEW
 }

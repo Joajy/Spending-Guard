@@ -12,7 +12,7 @@ flowchart LR
     E -- "예" --> G["정제된 알림 조회"]
     G --> H["Fast Parser<br/>금액 + 거래유형"]
     H --> I{"필수 값 확보?"}
-    I -- "예" --> J["PARSED 저장<br/>ANALYZING 상태"]
+    I -- "예" --> J["PARSED 저장<br/>COMPLETED 상태"]
     I -- "아니요" --> K["사유 저장<br/>NEEDS_REVIEW 상태"]
 ```
 

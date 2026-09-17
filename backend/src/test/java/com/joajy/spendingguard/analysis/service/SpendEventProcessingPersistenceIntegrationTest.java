@@ -86,7 +86,7 @@ class SpendEventProcessingPersistenceIntegrationTest {
         assertThat(parseResult.getRiskLevel().name()).isEqualTo("LOW");
         assertThat(parseResult.getRiskReason()).isEqualTo("NORMAL_PATTERN");
         assertThat(processedEventRepository.count()).isOne();
-        assertThat(rawEvent.getStatus()).isEqualTo(SpendEventStatus.ANALYZING);
+        assertThat(rawEvent.getStatus()).isEqualTo(SpendEventStatus.COMPLETED);
     }
 
     @Test

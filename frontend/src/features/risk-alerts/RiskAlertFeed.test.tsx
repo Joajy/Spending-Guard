@@ -41,7 +41,7 @@ function page(items: RiskAlertItem[], nextCursor: string | null = null): RiskAle
 const detail = {
   eventId: highAlert.eventId,
   source: "MANUAL_TEXT",
-  status: "ANALYZING",
+  status: "COMPLETED",
   occurredAt: highAlert.transactionAt,
   receivedAt: "2026-08-27T17:10:01Z",
   fastParse: {
