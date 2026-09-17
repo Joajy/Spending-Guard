@@ -737,6 +737,24 @@ Prometheus 설정과 경보 표현식은 공식 `promtool`로 검증했지만 �
 
 증빙: [Backend CI·Postman](https://github.com/Joajy/Spending-Guard/actions/runs/34851686155), [Deployment config](https://github.com/Joajy/Spending-Guard/actions/runs/34851686134), [Full-stack smoke](https://github.com/Joajy/Spending-Guard/actions/runs/34851686125)
 
+### Gradle Wrapper 줄바꿈 재현 방지 검증
+
+기준: `fix/gradle-wrapper-line-endings`, Container images, 2026-09-17
+
+| 구분 | 결과 |
+|---|---:|
+| 릴리스 계약 테스트 | 9/9 통과 |
+| 새 Windows 체크아웃의 `backend/gradlew` | `i/lf w/lf` |
+| `backend/gradlew` CR 문자 | 0개 |
+| 컨테이너 이미지 빌드 | 2/2 성공 |
+| 최종 실패 job | 0건 |
+
+확장자가 없는 Gradle Wrapper가 Windows 체크아웃에서 CRLF로 변환되면 Linux 컨테이너가 shebang을 `#!/bin/sh\r`로 해석해 실행하지 못한다. `backend/gradlew`의 체크아웃 형식을 LF로 고정하고, 줄바꿈 규칙이 바뀔 때 컨테이너 이미지 빌드가 반드시 실행되도록 워크플로 경로 조건과 계약 테스트를 함께 보완했다.
+
+원격 기능 브랜치를 Windows에 새로 받은 뒤 working tree가 LF이고 CR 문자가 없음을 확인했다. 같은 브랜치로 백엔드와 프론트엔드 Linux 컨테이너 이미지를 각각 빌드해 Gradle Wrapper 실행을 포함한 산출물 생성 경계도 통과했다.
+
+증빙: [Container images](https://github.com/Joajy/Spending-Guard/actions/runs/35209223427)
+
 ## 수치 해석 기준
 
 - `100% 파서 정답률`은 고정된 25건의 회귀 데이터셋에 대한 결과다. 금융 알림 전체나 운영 환경의 일반 정확도를 의미하지 않는다.
